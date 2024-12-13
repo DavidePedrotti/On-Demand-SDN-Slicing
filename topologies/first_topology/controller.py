@@ -14,7 +14,7 @@ class TrafficSlicing(app_manager.RyuApp):
 
         # out_port = slice_to_port[dpid][in_port]
         self.slice_to_port = { # Only connection beetween h6 (reception) and h9 (internet server)
-            4: { 2: 1, 1: 2 }, # These numbers are the ports in which hosts/switches are connected, and the very first is the ID of the switch. 
+            4: { 2: 1, 1: 2 }, # These numbers are the ports in which hosts/switches are connected, and the very first is the ID of the switch.
             1: { 3: 4, 4: 3 },
             5: { 1: 3, 3: 1 },
         }
@@ -60,7 +60,7 @@ class TrafficSlicing(app_manager.RyuApp):
         )
         datapath.send_msg(out)
 
-    # COPIED FROM GRANELLI 
+    # COPIED FROM GRANELLI
 
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
