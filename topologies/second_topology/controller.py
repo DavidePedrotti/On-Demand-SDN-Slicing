@@ -3,13 +3,19 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from slices.first_slice import get_first_slice
 from utility import get_mac_dict
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
+from ryu.app.wsgi import ControllerBase, WSGIApplication, route
+from webob import Response
+
+second_slicing_instance_name = "second_slicing_api_app"
+url = "/controller/second"
 
 class SecondSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+
+    _CONTEXTS = {"wsgi": WSGIApplication}
 
     def __init__(self, *args, **kwargs):
         super(SecondSlicing, self).__init__(*args, **kwargs)
@@ -28,6 +34,9 @@ class SecondSlicing(app_manager.RyuApp):
             3: { 1: [2,3], 2: [1,3], 3: [1,2] }
         }
         #print("First configuration loaded:", self.slice_to_port)
+
+        wsgi = kwargs["wsgi"]
+        wsgi.register(SecondSlicingController, {second_slicing_instance_name: self})
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -87,3 +96,37 @@ class SecondSlicing(app_manager.RyuApp):
             match = datapath.ofproto_parser.OFPMatch(in_port=in_port)
             self.add_flow(datapath, 1, match, actions) # add flow entry to the switch
             self._send_package(msg, datapath, in_port, actions)
+
+class SecondSlicingController(ControllerBase):
+
+    def __init__(self, req, link, data, **config):
+        super(SecondSlicingController, self).__init__(req, link, data, **config)
+        self.second_slicing = data[second_slicing_instance_name]
+
+    @staticmethod
+    def get_cors_headers():
+        return {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        }
+
+    @route("always_on_mode", url + "/always_on_mode", methods=["GET"])
+    def set_always_on_mode(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        return Response(status=200, body="Always on mode", headers=headers)
+
+    @route("listener_mode", url + "/listener_mode", methods=["GET"])
+    def set_listener_mode(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        return Response(status=200, body="Listener mode", headers=headers)
+
+    @route("no_guest_mode", url + "/no_guest_mode", methods=["GET"])
+    def set_no_guest_mode(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        return Response(status=200, body="No Guest mode", headers=headers)
+
+    @route("speaker_mode", url + "/speaker_mode", methods=["GET"])
+    def set_speaker_mode(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        return Response(status=200, body="Speaker mode", headers=headers)
