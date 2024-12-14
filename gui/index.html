@@ -4,13 +4,24 @@
   <title>GUI</title>
   <link rel="stylesheet" type="text/css" href="style.css">
   <script type="text/javascript" src="script.js"></script>
+  <style>
+    .page {
+      display: none; /* Initially hide both pages */
+    }
+    #page1 {
+      display: block; /* Show page 1 by default */
+    }
+    body {
+      font-family: Arial, sans-serif;
+    }
+  </style>
 </head>
 
 <body>
-  <div class="container">
+  <div id="page1" class="page">
     <div class="header">
-      <h1 style="text-align: center;font-size: 3rem;">SDN Network slicing</h1>
-      <h3 id="topologyMode" style="text-align: center;font-size: 2rem;color: blue;">Current mode: Default Mode</h3>
+      <h1 style="text-align: center;font-size: 3rem;">SDN Network slicing - First Topology</h1>
+      <h3 id="topologyMode" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current mode: Default Mode</h3>
     </div>
     <div class="content">
       <div class="image">
@@ -23,7 +34,45 @@
         <button class="default-btn" onclick="speakerMode()">Speaker Mode</button>
       </div>
     </div>
-    <p id="connectionStatus" style="text-align: center;font-size: 1rem;color: green;"></p>
   </div>
+
+  <div id="page2" class="page">
+    <div class="header">
+      <h1 style="text-align: center;font-size: 3rem;">SDN Network slicing - Second Topology</h1>
+      <h3 id="topologyMode" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current mode: Default Mode</h3>
+    </div>
+    <div class="content">
+      <div class="image">
+        <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology1">
+      </div>
+      <div class="buttons" style="text-align: center;">
+        <button class="default-btn" onclick="todo()">TODO</button>
+        <button class="default-btn" onclick="todo()">TODO</button>
+        <button class="default-btn" onclick="todo()">TODO</button>
+      </div>
+    </div>
+  </div>
+  <div class="buttons" style="text-align: center;">
+    <button id="toggle" class="default-btn" style="background-color:darkgreen">Go to Second Topology</button>
+    <p id="connectionStatus" style="text-align: center;font-size: 1rem;color: green;">Waiting for a request</p>
+  </div>
+</body>
+  <script>
+    let currentPage = 1
+
+    document.getElementById("toggle").onclick = function() {
+      if (currentPage === 1) {
+        document.getElementById("page1").style.display = "none"
+        document.getElementById("page2").style.display = "block"
+        document.getElementById("toggle").innerText = "Go to First Topology"
+        currentPage = 2
+      } else {
+        document.getElementById("page1").style.display = "block"
+        document.getElementById("page2").style.display = "none"
+        document.getElementById("toggle").innerText = "Go to Second Topology"
+        currentPage = 1
+      }
+    }
+  </script>
 
 </html>
