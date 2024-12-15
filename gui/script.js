@@ -4,6 +4,7 @@ const baseURL = "http://localhost:8081/controller/"
 const green = "rgb(44, 151, 75)"
 const red = "rgb(172, 17, 17)"
 
+// Slicing modes
 function alwaysOnMode() {
   fetchAndUpdate("first", "first/always_on_mode", "Topology1AlwaysOnMode.png", "Always On Mode", "alwaysOnBtn", "listenerBtn", "noGuestBtn", "speakerBtn")
 }
@@ -62,6 +63,49 @@ function fetchAndUpdate(topology, slicingMode, imageSrc, text, btnId, ...btnIds)
     })
 }
 
+// QoS
+function updateQoS() {
+  let values = document.getElementById("qosValues").value
+  values = values.split(",").map(value => parseInt(value))
+  let total = values.reduce((a, b) => a + b, 0)
+  if(total !== 10) {
+    document.getElementById("connectionStatus").textContent = "The sum of the values must be 10"
+    document.getElementById("connectionStatus").style.color = "red"
+    return
+  } else if(values.length !== 3) {
+    document.getElementById("connectionStatus").textContent = "The number of values must be 3"
+    document.getElementById("connectionStatus").style.color = "red"
+    return
+  }
+  fetch(baseURL + "second/qos", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      values: values
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"
+      document.getElementById("connectionStatus").style.color = "red"
+      throw new Error('ERROR ' + response.statusText)
+    }
+    return response.text()
+  })
+  .then(data => {
+    document.getElementById("connectionStatus").textContent = "Values updated correctly"
+    document.getElementById("connectionStatus").style.color = "green"
+    console.log(data)
+  })
+  .catch(error => {
+    document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"
+  })
+}
+
+
+// Utils
 function toggleButtonColor(topology, btnId, ...btnIds) {
   if(topology === "first" && getButtonColor(btnId) === red) {
     document.getElementById(btnId).style.backgroundColor = green

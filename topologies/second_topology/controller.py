@@ -102,6 +102,9 @@ class SecondSlicingController(ControllerBase):
     first_mode = 0
     second_mode = 0
     third_mode = 0
+    first_qos = 0
+    second_qos = 0
+    third_qos = 0
 
     def __init__(self, req, link, data, **config):
         super(SecondSlicingController, self).__init__(req, link, data, **config)
@@ -146,7 +149,6 @@ class SecondSlicingController(ControllerBase):
             SecondSlicingController.second_mode = 0
         return Response(status=200, body=self.get_active_modes(), headers=headers)
 
-
     @route("third_mode", url + "/third_mode", methods=["GET"])
     def toggle_third_mode(self, req, **kwargs):
         headers = self.get_cors_headers()
@@ -155,3 +157,21 @@ class SecondSlicingController(ControllerBase):
         else:
             SecondSlicingController.third_mode = 0
         return Response(status=200, body=self.get_active_modes(), headers=headers)
+
+    @route("qos", url + "/qos", methods=["POST", "OPTIONS"])
+    def set_first_qos(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        if req.method == "OPTIONS":
+            return Response(status=200, headers=headers)
+
+        data = json.loads(req.body.decode("utf-8"))
+        values = data["values"]
+
+        if len(values) != 3 or sum(values) != 10:
+            return Response(status=400, body="The request must contain 3 values of total sum 10", headers=headers)
+
+        SecondSlicingController.first_qos = values[0]
+        SecondSlicingController.second_qos = values[1]
+        SecondSlicingController.third_qos = values[2]
+
+        return Response(status=200, body="Values updated correctly", headers=headers)

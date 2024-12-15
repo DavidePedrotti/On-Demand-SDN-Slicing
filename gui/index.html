@@ -4,29 +4,16 @@
   <title>GUI</title>
   <link rel="stylesheet" type="text/css" href="style.css">
   <script type="text/javascript" src="script.js"></script>
-  <style>
-    .page {
-      display: none; /* Initially hide both pages */
-    }
-    #page1 {
-      display: block; /* Show page 1 by default */
-    }
-    body {
-      font-family: Arial, sans-serif;
-    }
-  </style>
 </head>
 
 <body>
   <div id="page1" class="page">
     <div class="header">
-      <h1 style="text-align: center;font-size: 3rem;">SDN Network slicing - First Topology</h1>
-      <h3 id="firstTopology" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
+      <h1 style="text-align: center;font-size: 2.5rem;">SDN Network slicing - First Topology</h1>
+      <h3 id="firstTopology" style="text-align: center;font-size: 1.5rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
     </div>
-    <div class="content">
-      <div class="image">
-        <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology1">
-      </div>
+    <div>
+      <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology1">
       <div class="buttons" style="text-align: center;">
         <button class="default-btn" onclick="alwaysOnMode()" id="alwaysOnBtn">Always On Mode</button>
         <button class="default-btn" onclick="listenerMode()" id="listenerBtn">Listener Mode</button>
@@ -38,22 +25,25 @@
 
   <div id="page2" class="page">
     <div class="header">
-      <h1 style="text-align: center;font-size: 3rem;">SDN Network slicing - Second Topology</h1>
-      <h3 id="secondTopology" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
+      <h1 style="text-align: center;font-size: 2.5rem;">SDN Network slicing - Second Topology</h1>
+      <h3 id="secondTopology" style="text-align: center;font-size: 1.5rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
     </div>
     <div class="content">
-      <div class="image">
-        <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology1">
-      </div>
-      <div class="buttons" style="text-align: center;">
-        <button class="default-btn" id="firstBtn" onclick="firstSlice()">TODO</button>
-        <button class="default-btn" id="secondBtn" onclick="secondSlice()">TODO</button>
-        <button class="default-btn" id="thirdBtn" onclick="thirdSlice()">TODO</button>
-      </div>
+      <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology2">
+    </div>
+    <div class="buttons" style="text-align: center;">
+      <button class="default-btn" id="firstBtn" onclick="firstSlice()">TODO</button>
+      <button class="default-btn" id="secondBtn" onclick="secondSlice()">TODO</button>
+      <button class="default-btn" id="thirdBtn" onclick="thirdSlice()">TODO</button>
     </div>
   </div>
   <div class="buttons" style="text-align: center;">
     <button id="toggle" class="default-btn" style="background-color:darkgreen">Go to Second Topology</button>
+    <div style="display: none;justify-content: center;align-items: center;" id="qos-class">
+      <p style="margin: 0">Update QoS</p>
+      <input type="text" style="margin: 0 10px;" id="qosValues">
+      <button onclick="updateQoS()" style="width: 70px;height:20px">Update</button>
+    </div>
     <p id="connectionStatus" style="text-align: center;font-size: 1rem;color: green;">Waiting for a request</p>
   </div>
 </body>
@@ -65,18 +55,19 @@
         document.getElementById("page1").style.display = "none"
         document.getElementById("page2").style.display = "block"
         document.getElementById("toggle").innerText = "Go to First Topology"
+        document.getElementById("qos-class").style.display = "block"
         currentPage = 2
       } else {
         document.getElementById("page1").style.display = "block"
         document.getElementById("page2").style.display = "none"
         document.getElementById("toggle").innerText = "Go to Second Topology"
+        document.getElementById("qos-class").style.display = "none"
         currentPage = 1
       }
     }
 
     // TODO: when loading the page, check the current mode and update the buttons
     // TODO: maybe send request to change the topology
-    // TODO: add sliders to change QoS values
   </script>
 
 </html>
