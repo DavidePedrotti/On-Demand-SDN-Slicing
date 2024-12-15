@@ -8,6 +8,7 @@ from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
 from webob import Response
+import json
 
 second_slicing_instance_name = "second_slicing_api_app"
 url = "/controller/second"
@@ -98,6 +99,9 @@ class SecondSlicing(app_manager.RyuApp):
             self._send_package(msg, datapath, in_port, actions)
 
 class SecondSlicingController(ControllerBase):
+    first_mode = 0
+    second_mode = 0
+    third_mode = 0
 
     def __init__(self, req, link, data, **config):
         super(SecondSlicingController, self).__init__(req, link, data, **config)
@@ -109,24 +113,45 @@ class SecondSlicingController(ControllerBase):
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
             'Access-Control-Allow-Headers': 'Content-Type',
+            'Content-Type': 'application/json'
         }
 
-    @route("always_on_mode", url + "/always_on_mode", methods=["GET"])
-    def set_always_on_mode(self, req, **kwargs):
-        headers = self.get_cors_headers()
-        return Response(status=200, body="Always on mode", headers=headers)
+    @staticmethod
+    def get_active_modes():
+        modes = []
+        if SecondSlicingController.first_mode == 1:
+            modes.append("First")
+        if SecondSlicingController.second_mode == 1:
+            modes.append("Second")
+        if SecondSlicingController.third_mode == 1:
+            modes.append("Third")
+        modes = ", ".join(modes)
+        return modes
 
-    @route("listener_mode", url + "/listener_mode", methods=["GET"])
-    def set_listener_mode(self, req, **kwargs):
+    @route("first_mode", url + "/first_mode", methods=["GET"])
+    def toggle_first_mode(self, req, **kwargs):
         headers = self.get_cors_headers()
-        return Response(status=200, body="Listener mode", headers=headers)
+        if SecondSlicingController.first_mode == 0:
+            SecondSlicingController.first_mode = 1
+        else:
+            SecondSlicingController.first_mode = 0
+        return Response(status=200, body=self.get_active_modes(), headers=headers)
 
-    @route("no_guest_mode", url + "/no_guest_mode", methods=["GET"])
-    def set_no_guest_mode(self, req, **kwargs):
+    @route("second_mode", url + "/second_mode", methods=["GET"])
+    def toggle_second_mode(self, req, **kwargs):
         headers = self.get_cors_headers()
-        return Response(status=200, body="No Guest mode", headers=headers)
+        if SecondSlicingController.second_mode == 0:
+            SecondSlicingController.second_mode = 1
+        else:
+            SecondSlicingController.second_mode = 0
+        return Response(status=200, body=self.get_active_modes(), headers=headers)
 
-    @route("speaker_mode", url + "/speaker_mode", methods=["GET"])
-    def set_speaker_mode(self, req, **kwargs):
+
+    @route("third_mode", url + "/third_mode", methods=["GET"])
+    def toggle_third_mode(self, req, **kwargs):
         headers = self.get_cors_headers()
-        return Response(status=200, body="Speaker mode", headers=headers)
+        if SecondSlicingController.third_mode == 0:
+            SecondSlicingController.third_mode = 1
+        else:
+            SecondSlicingController.third_mode = 0
+        return Response(status=200, body=self.get_active_modes(), headers=headers)

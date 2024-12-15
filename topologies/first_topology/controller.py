@@ -4,10 +4,16 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
+from ryu.app.wsgi import ControllerBase, WSGIApplication, route
+from webob import Response
 
+first_slicing_instance_name = "first_slicing_api_app"
+url = "/controller/first"
 
 class TrafficSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
+
+    _CONTEXTS = {"wsgi": WSGIApplication}
 
     def __init__(self, *args, **kwargs):
         super(TrafficSlicing, self).__init__(*args, **kwargs)
@@ -18,6 +24,9 @@ class TrafficSlicing(app_manager.RyuApp):
             1: { 3: 4, 4: 3 },
             5: { 1: 3, 3: 1 },
         }
+
+        wsgi = kwargs["wsgi"]
+        wsgi.register(SecondSlicingController, {second_slicing_instance_name: self})
 
     # COPIED FROM GRANELLI
 
@@ -77,3 +86,22 @@ class TrafficSlicing(app_manager.RyuApp):
             match = datapath.ofproto_parser.OFPMatch(in_port=in_port)
             self.add_flow(datapath, 1, match, actions)
             self._send_package(msg, datapath, in_port, actions)
+
+class FirstSlicingController(ControllerBase):
+
+    def __init__(self, req, link, data, **config):
+        super(FirstSlicingController, self).__init__(req, link, data, **config)
+        self.first_slicing = data[first_slicing_instance_name]
+
+    @staticmethod
+    def get_cors_headers():
+        return {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+        }
+
+    @route("todo_mode", url + "/todo_mode", methods=["GET"])
+    def set_todo_mode(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        return Response(status=200, body="Always on mode", headers=headers)
