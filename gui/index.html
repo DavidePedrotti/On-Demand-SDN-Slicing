@@ -21,17 +21,17 @@
   <div id="page1" class="page">
     <div class="header">
       <h1 style="text-align: center;font-size: 3rem;">SDN Network slicing - First Topology</h1>
-      <h3 id="topologyMode" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current mode: Default Mode</h3>
+      <h3 id="firstTopology" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
     </div>
     <div class="content">
       <div class="image">
         <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology1">
       </div>
       <div class="buttons" style="text-align: center;">
-        <button class="default-btn" onclick="alwaysOnMode()">Always On Mode</button>
-        <button class="default-btn" onclick="listenerMode()">Listener Mode</button>
-        <button class="default-btn" onclick="noGuestMode()">No Guest Mode</button>
-        <button class="default-btn" onclick="speakerMode()">Speaker Mode</button>
+        <button class="default-btn" onclick="alwaysOnMode()" id="alwaysOnBtn">Always On Mode</button>
+        <button class="default-btn" onclick="listenerMode()" id="listenerBtn">Listener Mode</button>
+        <button class="default-btn" onclick="noGuestMode()" id="noGuestBtn">No Guest Mode</button>
+        <button class="default-btn" onclick="speakerMode()" id="speakerBtn">Speaker Mode</button>
       </div>
     </div>
   </div>
@@ -39,16 +39,16 @@
   <div id="page2" class="page">
     <div class="header">
       <h1 style="text-align: center;font-size: 3rem;">SDN Network slicing - Second Topology</h1>
-      <h3 id="topologyMode" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current mode: Default Mode</h3>
+      <h3 id="secondTopology" style="text-align: center;font-size: 2rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
     </div>
     <div class="content">
       <div class="image">
         <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology1">
       </div>
       <div class="buttons" style="text-align: center;">
-        <button class="default-btn" onclick="todo()">TODO</button>
-        <button class="default-btn" onclick="todo()">TODO</button>
-        <button class="default-btn" onclick="todo()">TODO</button>
+        <button class="default-btn" id="firstBtn" onclick="firstSlice()">TODO</button>
+        <button class="default-btn" id="secondBtn" onclick="secondSlice()">TODO</button>
+        <button class="default-btn" id="thirdBtn" onclick="thirdSlice()">TODO</button>
       </div>
     </div>
   </div>
@@ -73,6 +73,10 @@
         currentPage = 1
       }
     }
+
+    // TODO: when loading the page, check the current mode and update the buttons
+    // TODO: maybe send request to change the topology
+    // TODO: add sliders to change QoS values
   </script>
 
 </html>
