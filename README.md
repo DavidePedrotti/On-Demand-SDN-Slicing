@@ -1,6 +1,6 @@
 # On-Demand-SDN-Slicing
 
-## Running the Application
+## Running the Application in the GUI
 This section contains all the necessary commands to run and test the application
 1. Running the controller:
     - navigate to either `first_topology/` or `second_topology/`
