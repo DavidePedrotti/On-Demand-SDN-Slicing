@@ -79,8 +79,6 @@ class SecondSlicing(app_manager.RyuApp):
         )
         datapath.send_msg(out)
 
-    # COPIED FROM GRANELLI
-
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         msg = ev.msg # contains the packet
@@ -99,12 +97,18 @@ class SecondSlicing(app_manager.RyuApp):
             self._send_package(msg, datapath, in_port, actions)
 
 class SecondSlicingController(ControllerBase):
-    first_mode = 0
-    second_mode = 0
-    third_mode = 0
-    first_qos = 0
-    second_qos = 0
-    third_qos = 0
+    mode_attributes = {
+        "first_mode": 0,
+        "second_mode": 0,
+        "third_mode": 0
+    }
+
+    # default values since all the links have 10mbps bandwidth
+    qos_attributes = {
+        "first_qos": 4,
+        "second_qos": 3,
+        "third_qos": 3
+    }
 
     def __init__(self, req, link, data, **config):
         super(SecondSlicingController, self).__init__(req, link, data, **config)
@@ -121,46 +125,42 @@ class SecondSlicingController(ControllerBase):
 
     @staticmethod
     def get_active_modes():
-        modes = []
-        if SecondSlicingController.first_mode == 1:
-            modes.append("First")
-        if SecondSlicingController.second_mode == 1:
-            modes.append("Second")
-        if SecondSlicingController.third_mode == 1:
-            modes.append("Third")
+        modes = [mode.replace("_mode","") for mode in SecondSlicingController.mode_attributes.keys() if SecondSlicingController.mode_attributes[mode] == 1]
         modes = ", ".join(modes)
         return modes
+
+    def set_mode(self, mode_name):
+        if self.mode_attributes.get(mode_name) == 0:
+            self.mode_attributes[mode_name] = 1
+        else:
+            self.mode_attributes[mode_name] = 0
+
+    def set_qos(self, values):
+        for i, qos in enumerate(self.qos_attributes.keys()):
+            self.qos_attributes[qos] = values[i]
 
     @route("first_mode", url + "/first_mode", methods=["GET"])
     def toggle_first_mode(self, req, **kwargs):
         headers = self.get_cors_headers()
-        if SecondSlicingController.first_mode == 0:
-            SecondSlicingController.first_mode = 1
-        else:
-            SecondSlicingController.first_mode = 0
+        self.set_mode("first_mode")
         return Response(status=200, body=self.get_active_modes(), headers=headers)
 
     @route("second_mode", url + "/second_mode", methods=["GET"])
     def toggle_second_mode(self, req, **kwargs):
         headers = self.get_cors_headers()
-        if SecondSlicingController.second_mode == 0:
-            SecondSlicingController.second_mode = 1
-        else:
-            SecondSlicingController.second_mode = 0
+        self.set_mode("second_mode")
         return Response(status=200, body=self.get_active_modes(), headers=headers)
 
     @route("third_mode", url + "/third_mode", methods=["GET"])
     def toggle_third_mode(self, req, **kwargs):
         headers = self.get_cors_headers()
-        if SecondSlicingController.third_mode == 0:
-            SecondSlicingController.third_mode = 1
-        else:
-            SecondSlicingController.third_mode = 0
+        self.set_mode("third_mode")
         return Response(status=200, body=self.get_active_modes(), headers=headers)
 
     @route("qos", url + "/qos", methods=["POST", "OPTIONS"])
     def set_first_qos(self, req, **kwargs):
         headers = self.get_cors_headers()
+
         if req.method == "OPTIONS":
             return Response(status=200, headers=headers)
 
@@ -170,8 +170,5 @@ class SecondSlicingController(ControllerBase):
         if len(values) != 3 or sum(values) != 10:
             return Response(status=400, body="The request must contain 3 values of total sum 10", headers=headers)
 
-        SecondSlicingController.first_qos = values[0]
-        SecondSlicingController.second_qos = values[1]
-        SecondSlicingController.third_qos = values[2]
-
-        return Response(status=200, body="Values updated correctly", headers=headers)
+        self.set_qos(values)
+        return Response(status=200, body="Values updated correctly" + str(values), headers=headers)
