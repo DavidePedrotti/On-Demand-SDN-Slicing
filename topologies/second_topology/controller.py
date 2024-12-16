@@ -3,10 +3,14 @@ from ryu.controller import ofp_event
 from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
-from slices.first_slice import get_first_slice
+#from slices.first_slice import get_first_slice
 from utility import get_mac_dict
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
+import subprocess
+from ryu.lib.packet import packet, ethernet, ether_types, ipv4
+
+QUEUE_ID = 123
 
 class SecondSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -23,12 +27,20 @@ class SecondSlicing(app_manager.RyuApp):
         # }
 
         self.slice_to_port = {
-            1: { 1: [3], 3: [1] },
-            2: { 4: [5], 5: [4] },
-            3: { 1: [2,3], 2: [1,3], 3: [1,2] }
+            3: { 1: [3], 3: [1, 2], 2: [3]},
+            2: { 5: [3, 2], 3: [5], 2: [5]}
+            #1: { 1: [3], 3: [1] },
+            #2: { 4: [5, 1], 5: [4,3], 3: [5], 1: [4] },
+            #3: { 1: [2,3], 2: [1,3], 3: [1,2] }
         }
         #print("First configuration loaded:", self.slice_to_port)
 
+        self.queue_exists = {}
+        # Dictionary that stores dpid (keys), ports (key, value) with all queues ID active for them (values)
+
+    
+    #TO DO: Add a function that every time the server send a requests, change the size of the queues by executing a bash script and passing to it as variables the size of the queues
+    
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
         datapath = ev.msg.datapath
@@ -42,6 +54,27 @@ class SecondSlicing(app_manager.RyuApp):
         ]
         # the table-miss flow entry has priority 0 so that it only matches when no other flow entries match
         self.add_flow(datapath, 0, match, actions)
+
+        for port_no in range(1, 6):  # Request queue config for each port
+            self.request_queue_config(datapath, port_no)
+
+    def request_queue_config(self, datapath, port_no):
+        parser = datapath.ofproto_parser
+        req = parser.OFPQueueGetConfigRequest(datapath, port=port_no)
+        datapath.send_msg(req) # Send the request message for queue config, that runs the function under this
+
+    @set_ev_cls(ofp_event.EventOFPQueueGetConfigReply, MAIN_DISPATCHER)
+    def handle_queue_config_reply(self, ev):
+        msg = ev.msg
+        dpid = msg.datapath.id
+        port_no = msg.port
+        queues = msg.queues
+        print(dpid, " ", port_no, ": ", queues)
+        if dpid not in self.queue_exists:
+            self.queue_exists[dpid] = {}
+        self.queue_exists[dpid][port_no] = [queue.queue_id for queue in queues]
+        
+        # Verify that a queue exist for a given port, otherwise if the queue doesn't exist the packet would be dropped
 
     def add_flow(self, datapath, priority, match, actions):
         ofproto = datapath.ofproto
@@ -73,17 +106,23 @@ class SecondSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
-        msg = ev.msg # contains the packet
-        datapath = msg.datapath # contains the switch
-        ofp_parser = datapath.ofproto_parser # contains the parser
+        msg = ev.msg
+        datapath = msg.datapath
         in_port = msg.match["in_port"]
         dpid = datapath.id
+        ofp_parser = datapath.ofproto_parser
 
         out_ports = self.slice_to_port.get(dpid, {}).get(in_port, [])
-        actions = []
-        if out_ports is not None:
+        actions = [ ]
+
+        # TO DO: select QUEUE_ID based on the service of the packet, so it can choose diocaneee the right stream
+        
+        if dpid in self.queue_exists: 
             for out_port in out_ports:
-                actions.append(ofp_parser.OFPActionOutput(out_port))
-            match = datapath.ofproto_parser.OFPMatch(in_port=in_port)
-            self.add_flow(datapath, 1, match, actions) # add flow entry to the switch
-            self._send_package(msg, datapath, in_port, actions)
+                if QUEUE_ID in self.queue_exists[dpid].get(out_port, []):
+                    actions.append(ofp_parser.OFPActionSetQueue(QUEUE_ID)) # If the given QUEUE_ID is associated with the port, add the action otherwise no
+                actions.append(ofp_parser.OFPActionOutput(out_port))    
+        
+        match = datapath.ofproto_parser.OFPMatch(in_port=in_port)
+        self.add_flow(datapath, 1, match, actions) # add flow entry to the switch
+        self._send_package(msg, datapath, in_port, actions)

@@ -4,15 +4,16 @@ from mininet.node import OVSKernelSwitch, RemoteController
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.log import setLogLevel
+import subprocess
 
 class SecondTopology(Topo):
     def __init__(self):
         # Initialize topology
         Topo.__init__(self)
 
-        high_bw = dict()
-        low_bw = dict()
-        host_link = dict()
+        link_config = dict()  # Total Capacity of the link ~ 10Mbps
+        host_link_config = dict()
+
 
         # Add hosts
         host_list = dict(inNamespace=True)
@@ -25,22 +26,22 @@ class SecondTopology(Topo):
             self.addSwitch("s%s" % (i + 1), **sconfig)
 
         # Add host links
-        self.addLink("h1", "s1")
-        self.addLink("h2", "s1")
-        self.addLink("h3", "s2")
-        self.addLink("h4", "s2")
-        self.addLink("h5", "s2")
-        self.addLink("h6", "s3")
-        self.addLink("h7", "s3")
-        self.addLink("h8", "s4")
-        self.addLink("h9", "s4")
-        self.addLink("h10", "s4")
+        self.addLink("h1", "s1", **link_config)
+        self.addLink("h2", "s1", **link_config)
+        self.addLink("h3", "s2", **link_config)
+        self.addLink("h4", "s2", **link_config)
+        self.addLink("h5", "s2", **link_config)
+        self.addLink("h6", "s3", **link_config)
+        self.addLink("h7", "s3", **link_config)
+        self.addLink("h8", "s4", **link_config)
+        self.addLink("h9", "s4", **link_config)
+        self.addLink("h10", "s4", **link_config)
 
         # Add switch links
-        self.addLink("s1", "s2", **high_bw)
-        self.addLink("s1", "s4", **high_bw)
-        self.addLink("s2", "s3", **low_bw)
-        self.addLink("s2", "s4", **high_bw)
+        self.addLink("s1", "s2", **host_link_config)
+        self.addLink("s1", "s4", **host_link_config)
+        self.addLink("s2", "s3", **host_link_config)
+        self.addLink("s2", "s4", **host_link_config)
 
 topos = {"sdn_slicing_second": (lambda: SecondTopology())}
 
@@ -61,6 +62,8 @@ if __name__ == "__main__":
 
     net.build()
     net.start()
+
+    subprocess.call("./createQueue.sh")
 
     CLI(net)
 
