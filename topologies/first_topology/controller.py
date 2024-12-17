@@ -1,32 +1,39 @@
 
 from ryu.base import app_manager
 from ryu.controller import ofp_event
-from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
+from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls
 from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
+from ryu.lib.packet import packet, ethernet, ether_types, ipv4
 from webob import Response
+from enum import Enum
+
+from utils import slice_to_port
+
+class FirstTopologyModes(Enum):
+    ALWAYS_ON = 0
+    LISTENER = 1
+    NO_GUEST = 2
+    SPEAKER = 3
+
+current_mode = FirstTopologyModes.NO_GUEST
 
 first_slicing_instance_name = "first_slicing_api_app"
 url = "/controller/first"
 
-class TrafficSlicing(app_manager.RyuApp):
+class FirstSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     _CONTEXTS = {"wsgi": WSGIApplication}
 
     def __init__(self, *args, **kwargs):
-        super(TrafficSlicing, self).__init__(*args, **kwargs)
+        super(FirstSlicing, self).__init__(*args, **kwargs)
 
-        # out_port = slice_to_port[dpid][in_port]
-        self.slice_to_port = { # Only connection beetween h6 (reception) and h9 (internet server)
-            4: { 2: 1, 1: 2 }, # These numbers are the ports in which hosts/switches are connected, and the very first is the ID of the switch.
-            1: { 3: 4, 4: 3 },
-            5: { 1: 3, 3: 1 },
-        }
+        self.slice_to_port = slice_to_port()
 
-        wsgi = kwargs["wsgi"]
-        wsgi.register(FirstSlicingController, {first_slicing_instance_name: self})
+        wsgi = kwargs["wsgi"] 
+        wsgi.register(FirstSlicingController, {first_slicing_instance_name: self})      
 
     # COPIED FROM GRANELLI
 
@@ -69,8 +76,7 @@ class TrafficSlicing(app_manager.RyuApp):
         )
         datapath.send_msg(out)
 
-    # COPIED FROM GRANELLI
-
+    # COPIED FROM GRANELLI 
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
@@ -78,12 +84,31 @@ class TrafficSlicing(app_manager.RyuApp):
         datapath = msg.datapath
         in_port = msg.match["in_port"]
         dpid = datapath.id
-        out_port = self.slice_to_port.get(dpid, {}).get(in_port, None)
-        print(in_port, dpid, out_port)
+        pkt = packet.Packet(msg.data)
+        eth = pkt.get_protocol(ethernet.ethernet)
+        
+        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+            # Ignore LLDP packets
+            return
+        
+        ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
+        if ipv4_pkt is None:
+            return
+        
+        src_ip = ipv4_pkt.src
+        dst_ip = ipv4_pkt.dst
+        
+        out_port = None
+        for entry in self.slice_to_port.get(dpid, {}).get(src_ip, []):
+            if dst_ip in entry:
+                out_port = entry[dst_ip]
+                break
+        
+        print(f"Packet In - In Port: {in_port}, DPID: {dpid}, Out Port: {out_port}, Src IP: {src_ip}, Dst IP: {dst_ip}")
 
         if out_port is not None:
             actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
-            match = datapath.ofproto_parser.OFPMatch(in_port=in_port)
+            match = datapath.ofproto_parser.OFPMatch(in_port=in_port, eth_type=ether_types.ETH_TYPE_IP, ipv4_src=src_ip, ipv4_dst=dst_ip)
             self.add_flow(datapath, 1, match, actions)
             self._send_package(msg, datapath, in_port, actions)
 
