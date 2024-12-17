@@ -6,15 +6,15 @@ const red = "rgb(172, 17, 17)"
 
 const modeConfigurations = {
   first: {
-    alwaysOn: { url: "first/always_on_mode", imageSrc: "Topology1AlwaysOnMode.png", caption: "Always On Mode", activeBtn: "alwaysOnBtn", inactiveBtns: ["listenerBtn", "noGuestBtn", "speakerBtn"] },
-    listener: { url: "first/listener_mode", imageSrc: "Topology1ListenerMode.png", caption: "Listener Mode", activeBtn: "listenerBtn", inactiveBtns: ["alwaysOnBtn", "noGuestBtn", "speakerBtn"] },
-    noGuest: { url: "first/no_guest_mode", imageSrc: "Topology1NoGuestMode.png", caption: "No Guest Mode", activeBtn: "noGuestBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "speakerBtn"] },
-    speaker: { url: "first/speaker_mode", imageSrc: "Topology1SpeakerMode.png", caption: "Speaker Mode", activeBtn: "speakerBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "noGuestBtn"] }
+    alwaysOn: { url: "first/always_on", imageSrc: "Topology1AlwaysOnMode.png", caption: "Always On Mode", activeBtn: "alwaysOnBtn", inactiveBtns: ["listenerBtn", "noGuestBtn", "speakerBtn"] },
+    listener: { url: "first/listener", imageSrc: "Topology1ListenerMode.png", caption: "Listener Mode", activeBtn: "listenerBtn", inactiveBtns: ["alwaysOnBtn", "noGuestBtn", "speakerBtn"] },
+    noGuest: { url: "first/no_guest", imageSrc: "Topology1NoGuestMode.png", caption: "No Guest Mode", activeBtn: "noGuestBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "speakerBtn"] },
+    speaker: { url: "first/speaker", imageSrc: "Topology1SpeakerMode.png", caption: "Speaker Mode", activeBtn: "speakerBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "noGuestBtn"] }
   },
   second: {
-    first: { url: "second/first_mode", imageSrc: "Topology1SpeakerMode.png", caption: "First Mode", activeBtn: "firstBtn", inactiveBtns: ["secondBtn", "thirdBtn"] },
-    second: { url: "second/second_mode", imageSrc: "Topology1NoGuestMode.png", caption: "Second Mode", activeBtn: "secondBtn", inactiveBtns: ["thirdBtn", "firstBtn"] },
-    third: { url: "second/third_mode", imageSrc: "Topology1ListenerMode.png", caption: "Third Mode", activeBtn: "thirdBtn", inactiveBtns: ["firstBtn", "secondBtn"] }
+    first: { url: "second/first", imageSrc: "Topology1SpeakerMode.png", caption: "First Mode", activeBtn: "firstBtn", inactiveBtns: ["secondBtn", "thirdBtn"] },
+    second: { url: "second/second", imageSrc: "Topology1NoGuestMode.png", caption: "Second Mode", activeBtn: "secondBtn", inactiveBtns: ["thirdBtn", "firstBtn"] },
+    third: { url: "second/third", imageSrc: "Topology1ListenerMode.png", caption: "Third Mode", activeBtn: "thirdBtn", inactiveBtns: ["firstBtn", "secondBtn"] }
   }
 }
 

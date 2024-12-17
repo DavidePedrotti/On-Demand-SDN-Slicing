@@ -6,9 +6,18 @@ from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
 from webob import Response
+from enum import Enum
 
 first_slicing_instance_name = "first_slicing_api_app"
 url = "/controller/first"
+
+class FirstTopologyModes(Enum):
+    ALWAYS_ON = 0
+    LISTENER = 1
+    NO_GUEST = 2
+    SPEAKER = 3
+
+current_mode = FirstTopologyModes.ALWAYS_ON
 
 class TrafficSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -88,12 +97,6 @@ class TrafficSlicing(app_manager.RyuApp):
             self._send_package(msg, datapath, in_port, actions)
 
 class FirstSlicingController(ControllerBase):
-    mode_attributes = {
-        "always_on_mode": 0,
-        "listener_mode": 0,
-        "no_guest_mode": 0,
-        "speaker_mode": 0
-    }
 
     def __init__(self, req, link, data, **config):
         super(FirstSlicingController, self).__init__(req, link, data, **config)
@@ -109,30 +112,29 @@ class FirstSlicingController(ControllerBase):
         }
 
     def set_mode(self, mode_name):
-        for mode in self.mode_attributes.keys():
-            self.mode_attributes[mode] = 0
-        self.mode_attributes[mode_name] = 1
+        global current_mode
+        current_mode = FirstTopologyModes[mode_name.upper()]
 
-    @route("always_on_mode", url + "/always_on_mode", methods=["GET"])
-    def set_always_on_mode(self, req, **kwargs):
+    @route("always_on", url + "/always_on", methods=["GET"])
+    def set_always_on(self, req, **kwargs):
         headers = self.get_cors_headers()
-        self.set_mode("always_on_mode")
+        self.set_mode("always_on")
         return Response(status=200, body="Current active mode: Always on", headers=headers)
 
-    @route("listener_mode", url + "/listener_mode", methods=["GET"])
-    def set_listener_mode(self, req, **kwargs):
+    @route("listener", url + "/listener", methods=["GET"])
+    def set_listener(self, req, **kwargs):
         headers = self.get_cors_headers()
-        self.set_mode("listener_mode")
+        self.set_mode("listener")
         return Response(status=200, body="Current active mode: Listener", headers=headers)
 
-    @route("no_guest_mode", url + "/no_guest_mode", methods=["GET"])
-    def set_no_guest_mode(self, req, **kwargs):
+    @route("no_guest", url + "/no_guest", methods=["GET"])
+    def set_no_guest(self, req, **kwargs):
         headers = self.get_cors_headers()
-        self.set_mode("no_guest_mode")
+        self.set_mode("no_guest")
         return Response(status=200, body="Current active mode: No guest", headers=headers)
 
-    @route("speaker_mode", url + "/speaker_mode", methods=["GET"])
-    def set_speaker_mode(self, req, **kwargs):
+    @route("speaker", url + "/speaker", methods=["GET"])
+    def set_speaker(self, req, **kwargs):
         headers = self.get_cors_headers()
-        self.set_mode("speaker_mode")
+        self.set_mode("speaker")
         return Response(status=200, body="Current active mode: Speaker", headers=headers)
