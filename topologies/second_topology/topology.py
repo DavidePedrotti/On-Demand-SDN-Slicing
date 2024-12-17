@@ -68,7 +68,15 @@ if __name__ == "__main__":
     net.build()
     net.start()
 
-    subprocess.call(["./createQueue.sh", HTTP_SIZE, DNS_SIZE, ICMP_SIZE])
+    with open("queues_uuids.txt", "r") as input_file:
+        with open("old_queues.txt", "w") as output_file:
+            output_file.write(input_file.read())
+
+
+    with open("queues_uuids.txt", "w") as stdout_file:
+       with open("errors.txt", "w") as error_file:
+            subprocess.call(["./createQueue.sh", HTTP_SIZE, DNS_SIZE, ICMP_SIZE], stdout=stdout_file, stderr=error_file)
+
 
     CLI(net)
 
