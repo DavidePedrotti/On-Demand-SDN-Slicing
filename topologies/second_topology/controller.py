@@ -253,11 +253,12 @@ class SecondSlicingController(ControllerBase):
         data = json.loads(req.body.decode("utf-8"))
         values = data["values"]
 
-        if len(values) != 3 or sum(values) != 10:
+        if len(values) != 3 or sum(values) <= 10:
             return Response(status=400, body="The request must contain 3 values of total sum 10", headers=headers)
 
-        values = [str(value) + '000000' for value in values]
+        values = [str(value) + '000000' for value in values] # convert the values into MBs
+
         qos = QoS()
-        qos.start_process("./createQueue.sh", values[0], values[1], values[2])
+        qos.start_process("./createQueue.sh", *values)
 
         return Response(status=200, body="Values updated correctly" + str(values), headers=headers)

@@ -86,8 +86,8 @@ function updateQoS() {
   let values = document.getElementById("qosValues").value
   values = values.split(",").map(value => parseInt(value))
   let total = values.reduce((a, b) => a + b, 0)
-  if(total !== 10) {
-    document.getElementById("connectionStatus").textContent = "The sum of the values must be 10"
+  if(total <= 10) {
+    document.getElementById("connectionStatus").textContent = "The sum of the values must be at most 10"
     document.getElementById("connectionStatus").style.color = "red"
     return
   } else if(values.length !== 3) {
