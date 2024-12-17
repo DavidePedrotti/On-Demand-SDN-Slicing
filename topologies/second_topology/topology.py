@@ -6,12 +6,17 @@ from mininet.link import TCLink
 from mininet.log import setLogLevel
 import subprocess
 
+HTTP_SIZE = "500000"
+DNS_SIZE = "50000"
+ICMP_SIZE = "500000"
+
+
 class SecondTopology(Topo):
     def __init__(self):
         # Initialize topology
         Topo.__init__(self)
 
-        link_config = dict()  # Total Capacity of the link ~ 10Mbps
+        link_config = dict()  
         host_link_config = dict()
 
 
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     net.build()
     net.start()
 
-    subprocess.call("./createQueue.sh")
+    subprocess.call(["./createQueue.sh", HTTP_SIZE, DNS_SIZE, ICMP_SIZE])
 
     CLI(net)
 

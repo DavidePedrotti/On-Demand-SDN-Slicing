@@ -8,9 +8,11 @@ from utility import get_mac_dict
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 import subprocess
-from ryu.lib.packet import packet, ethernet, ether_types, ipv4
+from ryu.lib.packet import packet, ethernet, ether_types, ipv4, udp, tcp, icmp
 
-QUEUE_ID = 123
+QUEUE_TCP = 123 # TCP traffic on port 80 is usually  HTTP
+QUEUE_UDP = 234 # UDP traffic on port 53 is usually for DNS
+QUEUE_ICMP = 345 # ICMP traffic is for ping, its bandwidth is not detectable directly so we could change it?
 
 class SecondSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
@@ -108,21 +110,85 @@ class SecondSlicing(app_manager.RyuApp):
     def _packet_in_handler(self, ev):
         msg = ev.msg
         datapath = msg.datapath
-        in_port = msg.match["in_port"]
-        dpid = datapath.id
-        ofp_parser = datapath.ofproto_parser
+        in_port = msg.match['in_port']
+        ofp_parser = datapath.ofproto_parser # contains the parser
+        pkt = packet.Packet(msg.data)
+        eth = pkt.get_protocol(ethernet.ethernet)
+        # ip_pkt = pkt.get_protocol(ipv4.ipv4) # If we want to change and add IP as a service
+        tcp_pkt = pkt.get_protocol(tcp.tcp)
+        udp_pkt = pkt.get_protocol(udp.udp)
+        icmp_pkt = pkt.get_protocol(icmp.icmp)
 
-        out_ports = self.slice_to_port.get(dpid, {}).get(in_port, [])
+        src = eth.src
+        dst = eth.dst
+
+        out_ports = self.slice_to_port.get(datapath.id, {}).get(in_port, [])
         actions = [ ]
 
-        # TO DO: select QUEUE_ID based on the service of the packet, so it can choose diocaneee the right stream
-        
-        if dpid in self.queue_exists: 
+        if tcp_pkt and tcp_pkt.dst_port == 80:
+            # HTTP traffic
+            print("HTTP traffic")
             for out_port in out_ports:
-                if QUEUE_ID in self.queue_exists[dpid].get(out_port, []):
-                    actions.append(ofp_parser.OFPActionSetQueue(QUEUE_ID)) # If the given QUEUE_ID is associated with the port, add the action otherwise no
-                actions.append(ofp_parser.OFPActionOutput(out_port))    
+                if QUEUE_TCP in self.queue_exists[datapath.id].get(out_port, []):
+                    actions.append(ofp_parser.OFPActionSetQueue(QUEUE_TCP)) # If the given QUEUE_ID is associated with the port, add the action otherwise no
+                actions.append(ofp_parser.OFPActionOutput(out_port))
+            match = ofp_parser.OFPMatch( # Create match rule for Flow Table
+                in_port=in_port,
+                eth_dst=dst,
+                eth_type=ether_types.ETH_TYPE_IP,
+                ip_proto=0x06, 
+                tcp_dst=80,
+            )
+            self.add_flow(datapath, 1, match, actions)
+            self._send_package(msg, datapath, in_port, actions)
+        elif udp_pkt and udp_pkt.dst_port == 53:
+            # DNS traffic
+            print("DNS detected")
+            for out_port in out_ports:
+                if QUEUE_UDP in self.queue_exists[datapath.id].get(out_port, []):
+                    actions.append(ofp_parser.OFPActionSetQueue(QUEUE_UDP)) 
+                actions.append(ofp_parser.OFPActionOutput(out_port))
+            match = ofp_parser.OFPMatch( 
+                in_port=in_port,
+                eth_dst=dst,
+                eth_type=ether_types.ETH_TYPE_IP,
+                ip_proto=0x11, 
+                udp_dst=53,
+            )    
+            self.add_flow(datapath, 1, match, actions)
+            self._send_package(msg, datapath, in_port, actions)
+        elif icmp_pkt:
+            # ICMP traffic
+            print("ICMP traffic")
+            for out_port in out_ports:
+                if QUEUE_ICMP in self.queue_exists[datapath.id].get(out_port, []):
+                    print("Associo coda")
+                    actions.append(ofp_parser.OFPActionSetQueue(QUEUE_ICMP))
+                actions.append(ofp_parser.OFPActionOutput(out_port))
+            match = ofp_parser.OFPMatch( 
+                in_port=in_port,
+                eth_dst=dst,
+                eth_type=ether_types.ETH_TYPE_IP,
+                ip_proto=0x01, 
+            )
+            self.add_flow(datapath, 1, match, actions)
+            self._send_package(msg, datapath, in_port, actions)
+        else: 
+            print("General traffic")
+            for out_port in out_ports:
+                actions.append(ofp_parser.OFPActionOutput(out_port))
+            match = datapath.ofproto_parser.OFPMatch(
+                in_port=in_port,
+                eth_dst=dst,
+                eth_type=ether_types.ETH_TYPE_IP,
+            )
+            self.add_flow(datapath, 1, match, actions)
+            self._send_package(msg, datapath, in_port, actions)
+
+            
+
         
-        match = datapath.ofproto_parser.OFPMatch(in_port=in_port)
-        self.add_flow(datapath, 1, match, actions) # add flow entry to the switch
-        self._send_package(msg, datapath, in_port, actions)
+
+        
+        
+        
