@@ -17,7 +17,7 @@ queues:345=@3q -- \
 --id=@2q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_2 -- \
 --id=@3q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_3
 
-# Switch 2 - eth5
+# Switch 2 - eth4
 sudo ovs-vsctl set port s2-eth4 qos=@newqos -- \
 --id=@newqos create QoS type=linux-htb \
 other-config:max-rate=10000000000 \

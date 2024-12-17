@@ -1,5 +1,9 @@
 # On-Demand-SDN-Slicing
 
+## Commands for testing
+list all queues: `sudo ovs-vsctl list queue`
+remove all queues: `sudo ovs-vsctl -- --all destroy QoS -- --all destroy Queue`
+
 ## Endpoints
 The endpoints for the first controller are exposed on URL `http://localhost:8081/controller/first` and are:
 - `always_on`

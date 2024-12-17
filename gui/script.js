@@ -86,7 +86,7 @@ function updateQoS() {
   let values = document.getElementById("qosValues").value
   values = values.split(",").map(value => parseInt(value))
   let total = values.reduce((a, b) => a + b, 0)
-  if(total <= 10) {
+  if(total > 10) {
     document.getElementById("connectionStatus").textContent = "The sum of the values must be at most 10"
     document.getElementById("connectionStatus").style.color = "red"
     return
@@ -110,7 +110,7 @@ function updateQoS() {
       document.getElementById("connectionStatus").style.color = "red"
       throw new Error('ERROR ' + response.statusText)
     }
-    return response.caption()
+    return response.text()
   })
   .then(data => {
     document.getElementById("connectionStatus").textContent = "Values updated correctly"
@@ -119,6 +119,8 @@ function updateQoS() {
   })
   .catch(error => {
     document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"
+    document.getElementById("connectionStatus").style.color = "red"
+    throw new Error('ERROR ' + error)
   })
 }
 
