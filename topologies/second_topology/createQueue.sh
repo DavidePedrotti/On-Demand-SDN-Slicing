@@ -75,7 +75,7 @@ queues:345=@3q -- \
 --id=@2q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_2 -- \
 --id=@3q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_3
 
-
+mkdir -p qos_data
 
 if [ -f "qos_data/old_queues.txt" ]; then
     while read -r uuid

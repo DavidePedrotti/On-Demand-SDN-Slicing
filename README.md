@@ -29,12 +29,12 @@ This section contains all the necessary commands to run and test the application
 
 ## Running the Application in the terminal
 This section contains all the necessary commands to run and test the application inside the terminal
-1. Running the controller:
-    - navigate to either `first_topology/` or `second_topology/`
-    - execute `ryu-manager --wsapi-port 8081 controller.py`
-2. Running mininet
+1. Running mininet
     - navigate to either `first_topology/` or `second_topology/`
     - execute `sudo python3 topology.py`
+2. Running the controller:
+    - navigate to either `first_topology/` or `second_topology/`
+    - execute `ryu-manager --wsapi-port 8081 controller.py`
 3. Making requests to the controller:
     - execute `curl http://localhost:8081/controller/{option}/{slice_name}`
     - `{option}`: the accepted options are either `first` or `second`
