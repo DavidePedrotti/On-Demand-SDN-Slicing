@@ -66,8 +66,8 @@ def get_port (src: str, dst: str) -> int:
 def generate_link_entries(src_ip, dst_ips, switch, ports):
     return {src_ip: [{dst_ip: get_port(switch, port)} for dst_ip, port in zip(dst_ips, ports)]}
     
-def slice_to_port(scenario = 2):
-    if scenario == 0:
+def slice_to_port(scenario = 0):
+    if scenario == 1:
         return {
             get_dpid("s1"): {
                 **generate_link_entries(get_IP_address("h10"), [get_IP_address("h9"), get_IP_address("h6")], "s1", ["s4", "s4"]),
@@ -123,7 +123,7 @@ def slice_to_port(scenario = 2):
                 **generate_link_entries(get_IP_address("h10"), [get_IP_address("h6"), get_IP_address("h9")], "s5", ["h6", "h9"]),
             },
         }
-    elif scenario == 1:
+    elif scenario == 2:
         return {
             get_dpid("s1"): {
                 **generate_link_entries(get_IP_address("h2"), [get_IP_address("h10")], "s1", ["h10"]),
@@ -173,7 +173,7 @@ def slice_to_port(scenario = 2):
                 **generate_link_entries(get_IP_address("h10"), [get_IP_address("h6"), get_IP_address("h9")], "s5", ["h6", "h9"]),
             },
         }
-    elif scenario == 2:
+    elif scenario == 0:
         return {
             get_dpid("s1"): {
                 **generate_link_entries(get_IP_address("h10"), [get_IP_address("h9")], "s1", ["s4"]),
