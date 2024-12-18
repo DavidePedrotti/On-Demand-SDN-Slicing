@@ -1,7 +1,6 @@
 from ryu.base import app_manager
 from ryu.controller import ofp_event
-from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls
-from ryu.controller.handler import set_ev_cls
+from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, set_ev_cls, DEAD_DISPATCHER
 from ryu.ofproto import ofproto_v1_3
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
 from ryu.lib.packet import packet, ethernet, ether_types, ipv4
@@ -12,8 +11,8 @@ from utils import slice_to_port
 
 class FirstTopologyModes(Enum):
     ALWAYS_ON = 0
-    LISTENER = 1
-    NO_GUEST = 2
+    NO_GUEST = 1
+    LISTENER = 2
     SPEAKER = 3
 
 current_mode = FirstTopologyModes.NO_GUEST
@@ -29,10 +28,51 @@ class FirstSlicing(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(FirstSlicing, self).__init__(*args, **kwargs)
 
+        self.datapaths = {}
         self.slice_to_port = slice_to_port()
 
         wsgi = kwargs["wsgi"]
         wsgi.register(FirstSlicingController, {first_slicing_instance_name: self})
+
+    def update_slice_to_port(self, mode):
+        self.slice_to_port = slice_to_port(mode.value)
+        print(f"Slice changed to {mode}!")
+
+        # Remove all flows tables
+        for dp_i in self.datapaths:
+            switch_dp = self.datapaths[dp_i]
+            ofp_parser = switch_dp.ofproto_parser
+            ofp = switch_dp.ofproto
+            mod = ofp_parser.OFPFlowMod(
+                datapath=switch_dp,
+                table_id=ofp.OFPTT_ALL,
+                command=ofp.OFPFC_DELETE,
+                out_port=ofp.OFPP_ANY,
+                out_group=ofp.OFPG_ANY
+            )
+            switch_dp.send_msg(mod)
+
+        # Reinstall flow tables to avoid losing connectivity
+        for dp_i in self.datapaths:
+            switch_dp = self.datapaths[dp_i]
+            ofp_parser = switch_dp.ofproto_parser
+            ofp = switch_dp.ofproto
+            match = ofp_parser.OFPMatch() 
+            actions = [
+                ofp_parser.OFPActionOutput(ofp.OFPP_CONTROLLER, ofp.OFPCML_NO_BUFFER)
+            ]
+            self.add_flow(switch_dp, 0, match, actions)
+        
+    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
+    def _state_change_handler(self, ev):
+        datapath = ev.datapath
+        if ev.state == MAIN_DISPATCHER:
+            self.datapaths[datapath.id] = datapath
+            print(f"Switch {datapath.id} connected.")
+        elif ev.state == DEAD_DISPATCHER:
+            if datapath.id in self.datapaths:
+                del self.datapaths[datapath.id]
+                print(f"Switch {datapath.id} disconnected.")
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -51,7 +91,6 @@ class FirstSlicing(app_manager.RyuApp):
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        # construct flow_mod message and send it.
         inst = [parser.OFPInstructionActions(ofproto.OFPIT_APPLY_ACTIONS, actions)]
         mod = parser.OFPFlowMod(
             datapath=datapath, priority=priority, match=match, instructions=inst
@@ -103,7 +142,12 @@ class FirstSlicing(app_manager.RyuApp):
 
         if out_port is not None:
             actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
-            match = datapath.ofproto_parser.OFPMatch(in_port=in_port, eth_type=ether_types.ETH_TYPE_IP, ipv4_src=src_ip, ipv4_dst=dst_ip)
+            match = datapath.ofproto_parser.OFPMatch(
+                in_port=in_port,
+                eth_type=ether_types.ETH_TYPE_IP,
+                ipv4_src=src_ip,
+                ipv4_dst=dst_ip,
+            )
             self.add_flow(datapath, 1, match, actions)
             self._send_package(msg, datapath, in_port, actions)
 
@@ -115,10 +159,10 @@ class FirstSlicingController(ControllerBase):
     @staticmethod
     def get_cors_headers():
         return {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Content-Type': 'application/json'
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type",
+            "Content-Type": "application/json",
         }
 
     @route("always_on_mode", url + "/always_on_mode", methods=["GET"])
@@ -126,6 +170,7 @@ class FirstSlicingController(ControllerBase):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.ALWAYS_ON
+        self.first_slicing.update_slice_to_port(current_mode)
         return Response(status=200, body="Current active mode: Always on", headers=headers)
 
     @route("listener_mode", url + "/listener_mode", methods=["GET"])
@@ -133,6 +178,7 @@ class FirstSlicingController(ControllerBase):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.LISTENER
+        self.first_slicing.update_slice_to_port(current_mode)
         return Response(status=200, body="Current active mode: Listener", headers=headers)
 
     @route("no_guest_mode", url + "/no_guest_mode", methods=["GET"])
@@ -140,6 +186,7 @@ class FirstSlicingController(ControllerBase):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.NO_GUEST
+        self.first_slicing.update_slice_to_port(current_mode)
         return Response(status=200, body="Current active mode: No guest", headers=headers)
 
     @route("speaker_mode", url + "/speaker_mode", methods=["GET"])
@@ -147,4 +194,5 @@ class FirstSlicingController(ControllerBase):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.SPEAKER
+        self.first_slicing.update_slice_to_port(current_mode)
         return Response(status=200, body="Current active mode: Speaker", headers=headers)
