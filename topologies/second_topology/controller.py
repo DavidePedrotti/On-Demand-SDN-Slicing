@@ -7,10 +7,13 @@ from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
 from ryu.lib.packet import packet, ethernet, ether_types, ipv4, udp, tcp, icmp
 from ryu.ofproto import ofproto_v1_3
-from utility import get_mac_dict
-from webob import Response
+from enum import Enum
+from utils import slice_to_port
 from qos import QoS
+from webob import Response
 import json
+
+current_modes = []
 
 second_slicing_instance_name = "second_slicing_api_app"
 url = "/controller/second"
@@ -19,6 +22,7 @@ QUEUE_TCP = 123 # TCP traffic on port 80 is usually  HTTP
 QUEUE_UDP = 234 # UDP traffic on port 53 is usually for DNS
 QUEUE_ICMP = 345 # ICMP traffic is for ping, its bandwidth is not detectable directly so we could change it?
 
+
 class SecondSlicing(app_manager.RyuApp):
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
@@ -26,14 +30,6 @@ class SecondSlicing(app_manager.RyuApp):
 
     def __init__(self, *args, **kwargs):
         super(SecondSlicing, self).__init__(*args, **kwargs)
-        mac_dict = get_mac_dict()
-
-        # self.mac_to_port = {
-        #     1: { mac_dict["h1"]: 1, mac_dict["h2"]: 2, mac_dict["h3"]: 3, mac_dict["h4"]: 3, mac_dict["h5"]: 3, mac_dict["h6"]: 3, mac_dict["h7"]: 3, mac_dict["h8"]: 4, mac_dict["h9"]: 4, mac_dict["h10"]: 4 },
-        #     2: { mac_dict["h1"]: 4, mac_dict["h2"]: 4, mac_dict["h3"]: 1, mac_dict["h4"]: 2, mac_dict["h5"]: 3, mac_dict["h6"]: 5, mac_dict["h7"]: 5, mac_dict["h8"]: 6, mac_dict["h9"]: 6, mac_dict["h10"]: 6 },
-        #     3: { mac_dict["h1"]: 3, mac_dict["h2"]: 3, mac_dict["h3"]: 3, mac_dict["h4"]: 3, mac_dict["h5"]: 3, mac_dict["h6"]: 1, mac_dict["h7"]: 2, mac_dict["h8"]: 3, mac_dict["h9"]: 3, mac_dict["h10"]: 3 },
-        #     4: { mac_dict["h1"]: 4, mac_dict["h2"]: 4, mac_dict["h3"]: 5, mac_dict["h4"]: 5, mac_dict["h5"]: 5, mac_dict["h6"]: 5, mac_dict["h7"]: 5, mac_dict["h8"]: 1, mac_dict["h9"]: 2, mac_dict["h10"]: 3 },
-        # }
 
         self.slice_to_port = {
             3: { 1: [3], 3: [1, 2], 2: [3]},
@@ -42,13 +38,9 @@ class SecondSlicing(app_manager.RyuApp):
             #2: { 4: [5, 1], 5: [4,3], 3: [5], 1: [4] },
             #3: { 1: [2,3], 2: [1,3], 3: [1,2] }
         }
-        #print("First configuration loaded:", self.slice_to_port)
+        # self.slice_to_port = slice_to_port()
 
         self.queue_exists = {}
-        # Dictionary that stores dpid (keys), ports (key, value) with all queues ID active for them (values)
-
-
-    #TO DO: Add a function that every time the server send a requests, change the size of the queues by executing a bash script and passing to it as variables the size of the queues
 
         wsgi = kwargs["wsgi"]
         wsgi.register(SecondSlicingController, {second_slicing_instance_name: self})
@@ -118,6 +110,7 @@ class SecondSlicing(app_manager.RyuApp):
     def _packet_in_handler(self, ev):
         msg = ev.msg
         datapath = msg.datapath
+        dpid = datapath.id
         in_port = msg.match['in_port']
         ofp_parser = datapath.ofproto_parser # contains the parser
         pkt = packet.Packet(msg.data)
@@ -194,10 +187,15 @@ class SecondSlicing(app_manager.RyuApp):
             self._send_package(msg, datapath, in_port, actions)
 
 class SecondSlicingController(ControllerBase):
-    mode_attributes = {
+    index_to_mode_name = {
+        0: "first_mode",
+        1: "second_mode",
+        2: "third_mode"
+    }
+    mode_name_to_index = {
         "first_mode": 0,
-        "second_mode": 0,
-        "third_mode": 0
+        "second_mode": 1,
+        "third_mode": 2
     }
 
     def __init__(self, req, link, data, **config):
@@ -213,17 +211,19 @@ class SecondSlicingController(ControllerBase):
             'Content-Type': 'application/json'
         }
 
-    @staticmethod
-    def get_active_modes():
-        modes = [mode.replace("_mode","") for mode in SecondSlicingController.mode_attributes.keys() if SecondSlicingController.mode_attributes[mode] == 1]
+    def get_active_modes(self):
+        global current_modes
+        modes = [self.index_to_mode_name[mode_index] for mode_index in current_modes]
         modes = ", ".join(modes)
         return modes
 
     def set_mode(self, mode_name):
-        if self.mode_attributes.get(mode_name) == 0:
-            self.mode_attributes[mode_name] = 1
+        global current_modes
+        mode_value = self.mode_name_to_index[mode_name]
+        if mode_value in current_modes:
+            current_modes.remove(mode_value)
         else:
-            self.mode_attributes[mode_name] = 0
+            current_modes.append(mode_value)
 
     @route("first_mode", url + "/first_mode", methods=["GET"])
     def toggle_first_mode(self, req, **kwargs):
