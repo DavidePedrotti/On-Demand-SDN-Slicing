@@ -31,10 +31,8 @@ class FirstSlicing(app_manager.RyuApp):
 
         self.slice_to_port = slice_to_port()
 
-        wsgi = kwargs["wsgi"] 
-        wsgi.register(FirstSlicingController, {first_slicing_instance_name: self})      
-
-    # COPIED FROM GRANELLI
+        wsgi = kwargs["wsgi"]
+        wsgi.register(FirstSlicingController, {first_slicing_instance_name: self})
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -75,8 +73,6 @@ class FirstSlicing(app_manager.RyuApp):
         )
         datapath.send_msg(out)
 
-    # COPIED FROM GRANELLI 
-
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         msg = ev.msg
@@ -85,24 +81,24 @@ class FirstSlicing(app_manager.RyuApp):
         dpid = datapath.id
         pkt = packet.Packet(msg.data)
         eth = pkt.get_protocol(ethernet.ethernet)
-        
+
         if eth.ethertype == ether_types.ETH_TYPE_LLDP:
             # Ignore LLDP packets
             return
-        
+
         ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
         if ipv4_pkt is None:
             return
-        
+
         src_ip = ipv4_pkt.src
         dst_ip = ipv4_pkt.dst
-        
+
         out_port = None
         for entry in self.slice_to_port.get(dpid, {}).get(src_ip, []):
             if dst_ip in entry:
                 out_port = entry[dst_ip]
                 break
-        
+
         print(f"Packet In - In Port: {in_port}, DPID: {dpid}, Out Port: {out_port}, Src IP: {src_ip}, Dst IP: {dst_ip}")
 
         if out_port is not None:
@@ -112,13 +108,6 @@ class FirstSlicing(app_manager.RyuApp):
             self._send_package(msg, datapath, in_port, actions)
 
 class FirstSlicingController(ControllerBase):
-    mode_attributes = {
-        "always_on_mode": 0,
-        "listener_mode": 0,
-        "no_guest_mode": 0,
-        "speaker_mode": 0
-    }
-
     def __init__(self, req, link, data, **config):
         super(FirstSlicingController, self).__init__(req, link, data, **config)
         self.first_slicing = data[first_slicing_instance_name]
@@ -132,31 +121,30 @@ class FirstSlicingController(ControllerBase):
             'Content-Type': 'application/json'
         }
 
-    def set_mode(self, mode_name):
-        for mode in self.mode_attributes.keys():
-            self.mode_attributes[mode] = 0
-        self.mode_attributes[mode_name] = 1
-
     @route("always_on_mode", url + "/always_on_mode", methods=["GET"])
     def set_always_on_mode(self, req, **kwargs):
+        global current_mode
         headers = self.get_cors_headers()
-        self.set_mode("always_on_mode")
+        current_mode = FirstTopologyModes.ALWAYS_ON
         return Response(status=200, body="Current active mode: Always on", headers=headers)
 
     @route("listener_mode", url + "/listener_mode", methods=["GET"])
     def set_listener_mode(self, req, **kwargs):
+        global current_mode
         headers = self.get_cors_headers()
-        self.set_mode("listener_mode")
+        current_mode = FirstTopologyModes.LISTENER
         return Response(status=200, body="Current active mode: Listener", headers=headers)
 
     @route("no_guest_mode", url + "/no_guest_mode", methods=["GET"])
     def set_no_guest_mode(self, req, **kwargs):
+        global current_mode
         headers = self.get_cors_headers()
-        self.set_mode("no_guest_mode")
+        current_mode = FirstTopologyModes.NO_GUEST
         return Response(status=200, body="Current active mode: No guest", headers=headers)
 
     @route("speaker_mode", url + "/speaker_mode", methods=["GET"])
     def set_speaker_mode(self, req, **kwargs):
+        global current_mode
         headers = self.get_cors_headers()
-        self.set_mode("speaker_mode")
+        current_mode = FirstTopologyModes.SPEAKER
         return Response(status=200, body="Current active mode: Speaker", headers=headers)

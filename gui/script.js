@@ -65,7 +65,6 @@ function updateSliceMode(topology, url, imageSrc, caption, activeBtn, ...inactiv
       document.getElementById("connectionStatus").textContent = "Slicing mode update was successful"
       document.getElementById("connectionStatus").style.color = "green"
       document.getElementById("img").src = baseDir + imageSrc
-      console.log(data)
       if(topology === "first") {
         document.getElementById("firstTopology").textContent = "Current: " + caption
       } else {
@@ -115,7 +114,6 @@ function updateQoS() {
   .then(data => {
     document.getElementById("connectionStatus").textContent = "Values updated correctly"
     document.getElementById("connectionStatus").style.color = "green"
-    console.log(data)
   })
   .catch(error => {
     document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"

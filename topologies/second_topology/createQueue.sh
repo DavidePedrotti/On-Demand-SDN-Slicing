@@ -73,16 +73,16 @@ queues:234=@2q \
 queues:345=@3q -- \
 --id=@1q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_1 -- \
 --id=@2q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_2 -- \
---id=@3q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_3 
+--id=@3q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_3
 
 
 
-if [ -f "old_queues.txt" ]; then
-    while read -r uuid 
+if [ -f "qos_data/old_queues.txt" ]; then
+    while read -r uuid
     do
         if [ -n "$uuid" ]; then
             sudo ovs-vsctl --if-exists destroy QoS $uuid
             sudo ovs-vsctl --if-exists destroy Queue $uuid
         fi
-    done < "old_queues.txt"
+    done < "qos_data/old_queues.txt"
 fi

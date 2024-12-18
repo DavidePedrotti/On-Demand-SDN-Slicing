@@ -6,10 +6,9 @@ from mininet.link import TCLink
 from mininet.log import setLogLevel
 from qos import QoS
 
-HTTP_SIZE = "500000"
-DNS_SIZE = "50000"
-ICMP_SIZE = "500000"
-
+HTTP_SIZE = "4" + "0" * 6 # 4Mbps
+DNS_SIZE = "2" + "0" * 6
+ICMP_SIZE = "4" + "0" * 6
 
 class SecondTopology(Topo):
     def __init__(self):

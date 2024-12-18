@@ -1,8 +1,8 @@
 import subprocess
 
-current_queues_path = "queues_uuids.txt"
-old_queues_path = "old_queues.txt"
-stderr_path = "errors.txt"
+current_queues_path = "qos_data/queues_uuids.txt"
+old_queues_path = "qos_data/old_queues.txt"
+stderr_path = "qos_data/errors.txt"
 create_queue_script = "./createQueue.sh"
 
 class QoS:
