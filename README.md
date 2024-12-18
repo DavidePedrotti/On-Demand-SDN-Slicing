@@ -19,7 +19,7 @@ The endpoints for the second controller are exposed on URL `http://localhost:808
 This section contains all the necessary commands to run and test the application inside the GUI
 1. Running the controller:
     - navigate to either `first_topology/` or `second_topology/`
-    - execute `ryu-manager --wsapi-port 8081 controller.py`
+    - execute `sudo ryu-manager --wsapi-port 8081 controller.py`
 2. Running the gui
     - navigate to the `gui/` directory
     - execute `python3 -m http.server 8080`
