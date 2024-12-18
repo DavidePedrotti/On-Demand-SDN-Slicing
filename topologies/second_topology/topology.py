@@ -69,7 +69,7 @@ if __name__ == "__main__":
     net.start()
 
     qos = QoS()
-    qos.start_process("./createQueue.sh", HTTP_SIZE, DNS_SIZE, ICMP_SIZE)
+    qos.start_process(HTTP_SIZE, DNS_SIZE, ICMP_SIZE)
 
     CLI(net)
 

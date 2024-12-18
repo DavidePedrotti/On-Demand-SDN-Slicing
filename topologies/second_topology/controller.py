@@ -260,6 +260,6 @@ class SecondSlicingController(ControllerBase):
         values = [str(value) for value in values] # convert the values into strings to pass them as arguments
 
         qos = QoS()
-        qos.start_process("./createQueue.sh", *values)
+        qos.start_process(*values)
 
         return Response(status=200, body="Values updated correctly" + str(values), headers=headers)
