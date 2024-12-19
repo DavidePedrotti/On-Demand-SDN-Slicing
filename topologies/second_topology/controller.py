@@ -136,6 +136,7 @@ class SecondSlicing(app_manager.RyuApp):
         udp_pkt = pkt.get_protocol(udp.udp)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
 
+        src = eth.src # MAC source
         dst = eth.dst # MAC destination to create match rules
 
         ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
@@ -154,11 +155,11 @@ class SecondSlicing(app_manager.RyuApp):
                 break
             if dpid in self.slice_to_port[slice]:
                 switch_map = self.slice_to_port[slice].get(dpid, {})
-                if src_ip in switch_map:
-                    entries = switch_map.get(src_ip, [])
+                if src in switch_map:
+                    entries = switch_map.get(src, [])
                     for entry in entries:
-                        if dst_ip in entry:
-                            out_ports.append(entry[dst_ip])
+                        if dst in entry:
+                            out_ports.append(entry[dst])
 
         actions =[]
         if tcp_pkt and tcp_pkt.dst_port == 80:
