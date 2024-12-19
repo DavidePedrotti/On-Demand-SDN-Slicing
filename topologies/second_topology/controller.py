@@ -1,7 +1,7 @@
 from ryu.app.wsgi import ControllerBase, WSGIApplication, route
 from ryu.base import app_manager
 from ryu.controller import ofp_event
-from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER
+from ryu.controller.handler import CONFIG_DISPATCHER, MAIN_DISPATCHER, DEAD_DISPATCHER
 from ryu.controller.handler import set_ev_cls
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
@@ -43,11 +43,22 @@ class SecondSlicing(app_manager.RyuApp):
         }
         # self.slice_to_port = slice_to_port()
         """
-        self.active_slices = [0, 1, 2]
         self.queue_exists = {}
+        self.datapaths = {}
 
         wsgi = kwargs["wsgi"]
         wsgi.register(SecondSlicingController, {second_slicing_instance_name: self})
+
+    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
+    def _state_change_handler(self, ev):
+        datapath = ev.datapath
+        if ev.state == MAIN_DISPATCHER:
+            self.datapaths[datapath.id] = datapath
+            print(f"Switch {datapath.id} connected.")
+        elif ev.state == DEAD_DISPATCHER:
+            if datapath.id in self.datapaths:
+                del self.datapaths[datapath.id]
+                print(f"Switch {datapath.id} disconnected.")
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
@@ -234,6 +245,32 @@ class SecondSlicingController(ControllerBase):
             'Content-Type': 'application/json'
         }
 
+    def clear_flow_tables(self):
+        # Remove all flows tables
+        for dp_i in self.second_slicing.datapaths:
+            switch_dp = self.second_slicing.datapaths[dp_i]
+            ofp_parser = switch_dp.ofproto_parser
+            ofp = switch_dp.ofproto
+            mod = ofp_parser.OFPFlowMod(
+                datapath=switch_dp,
+                table_id=ofp.OFPTT_ALL,
+                command=ofp.OFPFC_DELETE,
+                out_port=ofp.OFPP_ANY,
+                out_group=ofp.OFPG_ANY
+            )
+            switch_dp.send_msg(mod)
+
+        # Reinstall flow tables to avoid losing connectivity
+        for dp_i in self.second_slicing.datapaths:
+            switch_dp = self.second_slicing.datapaths[dp_i]
+            ofp_parser = switch_dp.ofproto_parser
+            ofp = switch_dp.ofproto
+            match = ofp_parser.OFPMatch() 
+            actions = [
+                ofp_parser.OFPActionOutput(ofp.OFPP_CONTROLLER, ofp.OFPCML_NO_BUFFER)
+            ]
+            self.second_slicing.add_flow(switch_dp, 0, match, actions)
+
     def get_active_modes(self):
         global current_modes
         modes = [self.index_to_mode_name[mode_index] for mode_index in current_modes]
@@ -247,6 +284,7 @@ class SecondSlicingController(ControllerBase):
             current_modes.remove(mode_value)
         else:
             current_modes.append(mode_value)
+        self.clear_flow_tables()
 
     @route("first_mode", url + "/first_mode", methods=["GET"])
     def toggle_first_mode(self, req, **kwargs):
