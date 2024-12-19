@@ -112,6 +112,7 @@ class SecondSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
+        global current_modes
         msg = ev.msg
         datapath = msg.datapath
         dpid = datapath.id
@@ -130,14 +131,14 @@ class SecondSlicing(app_manager.RyuApp):
 
         if ipv4_pkt is None: # Packets that not contains ipv4 layer will be dropped, need to check this
             return
-        
+
         src_ip = ipv4_pkt.src # IP src and dst to use generate_link_entries
         dst_ip = ipv4_pkt.dst
 
         out_ports = []
         switch_map = None
         entries = None
-        for slice in self.active_slices:
+        for slice in current_modes:
             if out_ports:
                 break
             if dpid in self.slice_to_port[slice]:
@@ -147,7 +148,7 @@ class SecondSlicing(app_manager.RyuApp):
                     for entry in entries:
                         if dst_ip in entry:
                             out_ports.append(entry[dst_ip])
-        
+
         actions =[]
         if tcp_pkt and tcp_pkt.dst_port == 80:
             # HTTP traffic
