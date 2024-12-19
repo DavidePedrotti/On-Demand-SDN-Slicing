@@ -31,6 +31,9 @@ class SecondSlicing(app_manager.RyuApp):
     def __init__(self, *args, **kwargs):
         super(SecondSlicing, self).__init__(*args, **kwargs)
 
+        self.slice_to_port = slice_to_port()
+
+        """
         self.slice_to_port = {
             3: { 1: [3], 3: [1, 2], 2: [3]},
             2: { 5: [3, 2], 3: [5], 2: [5]}
@@ -39,7 +42,8 @@ class SecondSlicing(app_manager.RyuApp):
             #3: { 1: [2,3], 2: [1,3], 3: [1,2] }
         }
         # self.slice_to_port = slice_to_port()
-
+        """
+        self.active_slices = [0, 1, 2]
         self.queue_exists = {}
 
         wsgi = kwargs["wsgi"]
@@ -120,12 +124,31 @@ class SecondSlicing(app_manager.RyuApp):
         udp_pkt = pkt.get_protocol(udp.udp)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
 
-        src = eth.src
-        dst = eth.dst
+        dst = eth.dst # MAC destination to create match rules
 
-        out_ports = self.slice_to_port.get(datapath.id, {}).get(in_port, [])
-        actions = [ ]
+        ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
 
+        if ipv4_pkt is None: # Packets that not contains ipv4 layer will be dropped, need to check this
+            return
+        
+        src_ip = ipv4_pkt.src # IP src and dst to use generate_link_entries
+        dst_ip = ipv4_pkt.dst
+
+        out_ports = []
+        switch_map = None
+        entries = None
+        for slice in self.active_slices:
+            if out_ports:
+                break
+            if dpid in self.slice_to_port[slice]:
+                switch_map = self.slice_to_port[slice].get(dpid, {})
+                if src_ip in switch_map:
+                    entries = switch_map.get(src_ip, [])
+                    for entry in entries:
+                        if dst_ip in entry:
+                            out_ports.append(entry[dst_ip])
+        
+        actions =[]
         if tcp_pkt and tcp_pkt.dst_port == 80:
             # HTTP traffic
             print("HTTP traffic")
@@ -163,7 +186,6 @@ class SecondSlicing(app_manager.RyuApp):
             print("ICMP traffic")
             for out_port in out_ports:
                 if QUEUE_ICMP in self.queue_exists[datapath.id].get(out_port, []):
-                    print("Associo coda")
                     actions.append(ofp_parser.OFPActionSetQueue(QUEUE_ICMP))
                 actions.append(ofp_parser.OFPActionOutput(out_port))
             match = ofp_parser.OFPMatch(
