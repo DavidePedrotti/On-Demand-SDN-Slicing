@@ -1,6 +1,6 @@
 def get_IP_address(host_name: str) -> str:
     ip_mapping = {
-        f"h{i}": f"192.168.0.{i}" for i in range(1, 11)
+        f"h{i}": f"10.0.0.{i}" for i in range(1, 11)
     }
     return ip_mapping.get(host_name)
 
@@ -87,16 +87,16 @@ def slice_to_port():
     }
     third_scenario = {
         get_dpid("s2"): {
-            **generate_link_entries(get_IP_address("h3"), [get_IP_address("h9"), get_IP_address("h10")], "s2", ["s4", "s4"])
-            **generate_link_entries(get_IP_address("h4"), [get_IP_address("h9"), get_IP_address("h10")], "s2", ["s4", "s4"])
-            **generate_link_entries(get_IP_address("h9"), [get_IP_address("h3"), get_IP_address("h4")], "s2", ["h3", "h4"])
-            **generate_link_entries(get_IP_address("h10"), [get_IP_address("h3"), get_IP_address("h4")], "s2", ["h3", "h4"])
+            **generate_link_entries(get_IP_address("h3"), [get_IP_address("h9"), get_IP_address("h10")], "s2", ["s4", "s4"]),
+            **generate_link_entries(get_IP_address("h4"), [get_IP_address("h9"), get_IP_address("h10")], "s2", ["s4", "s4"]),
+            **generate_link_entries(get_IP_address("h9"), [get_IP_address("h3"), get_IP_address("h4")], "s2", ["h3", "h4"]),
+            **generate_link_entries(get_IP_address("h10"), [get_IP_address("h3"), get_IP_address("h4")], "s2", ["h3", "h4"]),
         },
         get_dpid("s4"): {
-            **generate_link_entries(get_IP_address("h3"), [get_IP_address("h9"), get_IP_address("h10")], "s4", ["h9", "h10"])
-            **generate_link_entries(get_IP_address("h4"), [get_IP_address("h9"), get_IP_address("h10")], "s4", ["h9", "h10"])
-            **generate_link_entries(get_IP_address("h9"), [get_IP_address("h3"), get_IP_address("h4")], "s4", ["s2", "s2"])
-            **generate_link_entries(get_IP_address("h10"), [get_IP_address("h3"), get_IP_address("h4")], "s4", ["s2", "s2"])
+            **generate_link_entries(get_IP_address("h3"), [get_IP_address("h9"), get_IP_address("h10")], "s4", ["h9", "h10"]),
+            **generate_link_entries(get_IP_address("h4"), [get_IP_address("h9"), get_IP_address("h10")], "s4", ["h9", "h10"]),
+            **generate_link_entries(get_IP_address("h9"), [get_IP_address("h3"), get_IP_address("h4")], "s4", ["s2", "s2"]),
+            **generate_link_entries(get_IP_address("h10"), [get_IP_address("h3"), get_IP_address("h4")], "s4", ["s2", "s2"]),
         }
     }
     return {
