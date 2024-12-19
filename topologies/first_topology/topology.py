@@ -3,6 +3,7 @@ from mininet.net import Mininet
 from mininet.node import OVSKernelSwitch, RemoteController
 from mininet.cli import CLI
 from mininet.link import TCLink
+from mininet.log import setLogLevel
 
 class NetworkTopology(Topo):
 
@@ -46,6 +47,7 @@ class NetworkTopology(Topo):
         self.addLink("s5", "h9", port1=5, port2=1, bw=10)
 
 if __name__ == "__main__":
+    setLogLevel("info")   
     # Create an istance of the topology and controller
     topology = NetworkTopology()
     controller = RemoteController("c1", ip="127.0.0.1", port=6633)

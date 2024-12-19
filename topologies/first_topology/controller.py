@@ -34,7 +34,7 @@ class FirstSlicing(app_manager.RyuApp):
         wsgi = kwargs["wsgi"]
         wsgi.register(FirstSlicingController, {first_slicing_instance_name: self})
 
-    def update_slice_to_port(self, mode):
+    def update_slice(self, mode):
         self.slice_to_port = slice_to_port(mode.value)
         print(f"Slice changed to {mode}!")
 
@@ -178,7 +178,7 @@ class FirstSlicingController(ControllerBase):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.LISTENER
-        self.first_slicing.update_slice_to_port(current_mode)
+        self.first_slicing.update_slice(current_mode)
         return Response(status=200, body="Current active mode: Listener", headers=headers)
 
     @route("no_guest_mode", url + "/no_guest_mode", methods=["GET"])
@@ -186,7 +186,7 @@ class FirstSlicingController(ControllerBase):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.NO_GUEST
-        self.first_slicing.update_slice_to_port(current_mode)
+        self.first_slicing.update_slice(current_mode)
         return Response(status=200, body="Current active mode: No guest", headers=headers)
 
     @route("speaker_mode", url + "/speaker_mode", methods=["GET"])
@@ -194,5 +194,5 @@ class FirstSlicingController(ControllerBase):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.SPEAKER
-        self.first_slicing.update_slice_to_port(current_mode)
+        self.first_slicing.update_slice(current_mode)
         return Response(status=200, body="Current active mode: Speaker", headers=headers)
