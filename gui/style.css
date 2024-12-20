@@ -8,12 +8,19 @@ body {
   font-family: Arial, sans-serif;
 }
 
-img {
+.firstImg {
   width: 900px;
   height: 450px;
   display: block;
   margin: 0 auto;
-  width: 50%;
+  border: 5px solid black;
+}
+
+.secondImg {
+  width: 550px;
+  height: 450px;
+  display: block;
+  margin: 0 auto;
   border: 5px solid black;
 }
 

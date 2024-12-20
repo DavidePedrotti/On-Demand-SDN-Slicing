@@ -266,7 +266,7 @@ class SecondSlicingController(ControllerBase):
             switch_dp = self.second_slicing.datapaths[dp_i]
             ofp_parser = switch_dp.ofproto_parser
             ofp = switch_dp.ofproto
-            match = ofp_parser.OFPMatch() 
+            match = ofp_parser.OFPMatch()
             actions = [
                 ofp_parser.OFPActionOutput(ofp.OFPP_CONTROLLER, ofp.OFPCML_NO_BUFFER)
             ]
@@ -274,7 +274,7 @@ class SecondSlicingController(ControllerBase):
 
     def get_active_modes(self):
         global current_modes
-        modes = [self.index_to_mode_name[mode_index] for mode_index in current_modes]
+        modes = [self.index_to_mode_name[mode_index] for mode_index in sorted(current_modes)]
         modes = ", ".join(modes)
         return modes
 
@@ -286,6 +286,16 @@ class SecondSlicingController(ControllerBase):
         else:
             current_modes.append(mode_value)
         self.clear_flow_tables()
+
+    @route("active_modes", url + "/active_modes", methods=["GET"])
+    def fetch_active_modes(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        global current_modes
+        modes = [str(mode) for mode in current_modes]
+        modes = ", ".join(modes)
+        if not modes:
+            modes = "No active modes"
+        return Response(status=200, body=modes, headers=headers)
 
     @route("first_mode", url + "/first_mode", methods=["GET"])
     def toggle_first_mode(self, req, **kwargs):
