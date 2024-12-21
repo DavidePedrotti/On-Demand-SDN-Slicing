@@ -160,24 +160,17 @@ class SecondSlicing(app_manager.RyuApp):
         udp_pkt = pkt.get_protocol(udp.udp)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
 
-        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
-            return
-
         src = eth.src # MAC source
         dst = eth.dst # MAC destination to create match rules
-        """
-        ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
 
+        ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
         if ipv4_pkt is None: # Packets that not contains ipv4 layer will be dropped, need to check this
             return
         
-        src_ip = ipv4_pkt.src # IP src and dst to use generate_link_entries
-        dst_ip = ipv4_pkt.dst
-        """
         out_ports = []
         switch_map = None
         entries = None
-        for slice in current_modes:
+        for slice in current_modes: # Check if the communication requested is in one of the active slices
             if out_ports:
                 break
             if dpid in self.slice_to_port[slice]:
