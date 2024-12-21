@@ -1,0 +1,92 @@
+<html>
+
+<head>
+  <title>GUI</title>
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <script type="module">
+    import {
+      alwaysOnMode,
+      listenerMode,
+      noGuestMode,
+      speakerMode,
+      firstSlice,
+      secondSlice,
+      thirdSlice,
+      updateQoS
+    } from './script.js'
+    window.alwaysOnMode = alwaysOnMode
+    window.listenerMode = listenerMode
+    window.noGuestMode = noGuestMode
+    window.speakerMode = speakerMode
+    window.firstSlice = firstSlice
+    window.secondSlice = secondSlice
+    window.thirdSlice = thirdSlice
+    window.updateQoS = updateQoS
+  </script>
+</head>
+
+<body>
+  <div id="page1" class="page">
+    <div class="header">
+      <h1 style="text-align: center;font-size: 2.5rem;">SDN Network slicing - First Topology</h1>
+      <h3 id="firstTopology" style="text-align: center;font-size: 1.5rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
+    </div>
+    <div>
+      <img id="img" src="images/Topology1.png" alt="Topology1">
+      <div class="buttons" style="text-align: center;">
+        <button class="default-btn" onclick="window.alwaysOnMode()" id="alwaysOnBtn">Always On Mode</button>
+        <button class="default-btn" onclick="window.listenerMode()" id="listenerBtn">Listener Mode</button>
+        <button class="default-btn" onclick="window.noGuestMode()" id="noGuestBtn">No Guest Mode</button>
+        <button class="default-btn" onclick="window.speakerMode()" id="speakerBtn">Speaker Mode</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="page2" class="page">
+    <div class="header">
+      <h1 style="text-align: center;font-size: 2.5rem;">SDN Network slicing - Second Topology</h1>
+      <h3 id="secondTopology" style="text-align: center;font-size: 1.5rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
+    </div>
+    <div class="content">
+      <img id="img2" src="images/Topology2.png" alt="Topology2">
+    </div>
+    <div class="buttons" style="text-align: center;">
+      <button class="default-btn" id="firstBtn" onclick="window.firstSlice()">First Mode</button>
+      <button class="default-btn" id="secondBtn" onclick="window.secondSlice()">Second Mode</button>
+      <button class="default-btn" id="thirdBtn" onclick="window.thirdSlice()">Third Mode</button>
+    </div>
+  </div>
+  <div class="buttons" style="text-align: center;">
+    <button id="toggle" class="default-btn" style="background-color:darkgreen">Go to Second Topology</button>
+    <div style="display: none;justify-content: center;align-items: center;" id="qos-class">
+      <p style="margin: 0">Update QoS</p>
+      <input type="text" style="margin: 0 10px;" id="qosValues">
+      <button onclick="window.updateQoS()" style="width: 70px;height:20px">Update</button>
+    </div>
+    <p id="connectionStatus" style="text-align: center;font-size: 1rem;color: green;">Waiting for a request</p>
+  </div>
+</body>
+  <script>
+    let currentPage = 1
+
+    document.getElementById("toggle").onclick = function() {
+      if (currentPage === 1) {
+        document.getElementById("page1").style.display = "none"
+        document.getElementById("page2").style.display = "block"
+        document.getElementById("toggle").innerText = "Go to First Topology"
+        document.getElementById("qos-class").style.display = "block"
+        currentPage = 2
+      } else {
+        document.getElementById("page1").style.display = "block"
+        document.getElementById("page2").style.display = "none"
+        document.getElementById("toggle").innerText = "Go to Second Topology"
+        document.getElementById("qos-class").style.display = "none"
+        currentPage = 1
+      }
+    }
+
+    // TODO: when loading the page, check the current mode and update the buttons
+    // TODO: maybe send request to change the topology
+  </script>
+
+</html>

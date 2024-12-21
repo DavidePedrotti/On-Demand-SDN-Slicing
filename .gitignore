@@ -1,1 +1,5 @@
 __pycache__/
+stderr.txt
+old_queues.txt
+current_queues.txt
+qos_data/

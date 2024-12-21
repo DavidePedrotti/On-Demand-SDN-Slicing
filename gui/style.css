@@ -1,0 +1,64 @@
+.page {
+  display: none;
+}
+#page1 {
+  display: block;
+}
+body {
+  font-family: Arial, sans-serif;
+}
+
+img {
+  width: 900px;
+  height: 450px;
+  display: block;
+  margin: 0 auto;
+  border: 5px solid black;
+}
+
+.content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+button {
+  width: 200px;
+  height: 100px;
+  display: inline-block;
+  margin: 5px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 10%;
+}
+
+.default-btn {
+  appearance: none;
+  background-color: rgb(172, 17, 17);
+  border: 1px solid rgba(27, 31, 35, .15);
+  border-radius: 6px;
+  box-shadow: rgba(27, 31, 35, .1) 0 1px 0;
+  box-sizing: border-box;
+  color: #fff;
+  cursor: pointer;
+  display: inline-block;
+  font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  padding: 6px 16px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.default-btn:focus:not(:focus-visible):not(.focus-visible) {
+  box-shadow: none;
+  outline: none;
+}
