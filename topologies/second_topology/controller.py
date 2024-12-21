@@ -21,6 +21,7 @@ url = "/controller/second"
 QUEUE_TCP = 123 # TCP traffic on port 80 is usually  HTTP
 QUEUE_UDP = 234 # UDP traffic on port 53 is usually for DNS
 QUEUE_ICMP = 345 # ICMP traffic is for ping, its bandwidth is not detectable directly so we could change it?
+QUEUE_GT = 456 # General traffic queue
 
 
 class SecondSlicing(app_manager.RyuApp):
@@ -73,6 +74,29 @@ class SecondSlicing(app_manager.RyuApp):
         ]
         # the table-miss flow entry has priority 0 so that it only matches when no other flow entries match
         self.add_flow(datapath, 0, match, actions)
+
+        # If the only rule present is the one for general traffic (priority=1), forward to the controller HTTP, DNS and ICMP packets
+        
+        match_tcp = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,
+            ip_proto=0x06, # TCP so HTTP
+            tcp_dst=80
+        )
+        self.add_flow(datapath, 10, match_tcp, actions)
+
+        match_udp = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,
+            ip_proto=0x11, # UDP so DNS
+            udp_dst=53
+        )
+        self.add_flow(datapath, 10, match_udp, actions)
+
+        match_icmp = parser.OFPMatch(
+            eth_type=ether_types.ETH_TYPE_IP,
+            ip_proto=0x01, # ICMP
+        )
+        self.add_flow(datapath, 10, match_icmp, actions)
+
 
         for port_no in range(1, 6):  # Request queue config for each port
             self.request_queue_config(datapath, port_no)
@@ -136,17 +160,20 @@ class SecondSlicing(app_manager.RyuApp):
         udp_pkt = pkt.get_protocol(udp.udp)
         icmp_pkt = pkt.get_protocol(icmp.icmp)
 
+        if eth.ethertype == ether_types.ETH_TYPE_LLDP:
+            return
+
         src = eth.src # MAC source
         dst = eth.dst # MAC destination to create match rules
-
+        """
         ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
 
         if ipv4_pkt is None: # Packets that not contains ipv4 layer will be dropped, need to check this
             return
-
+        
         src_ip = ipv4_pkt.src # IP src and dst to use generate_link_entries
         dst_ip = ipv4_pkt.dst
-
+        """
         out_ports = []
         switch_map = None
         entries = None
@@ -160,6 +187,7 @@ class SecondSlicing(app_manager.RyuApp):
                     for entry in entries:
                         if dst in entry:
                             out_ports.append(entry[dst])
+
 
         actions =[]
         if tcp_pkt and tcp_pkt.dst_port == 80:
@@ -176,7 +204,7 @@ class SecondSlicing(app_manager.RyuApp):
                 ip_proto=0x06,
                 tcp_dst=80,
             )
-            self.add_flow(datapath, 1, match, actions)
+            self.add_flow(datapath, 100, match, actions)
             self._send_package(msg, datapath, in_port, actions)
         elif udp_pkt and udp_pkt.dst_port == 53:
             # DNS traffic
@@ -192,7 +220,7 @@ class SecondSlicing(app_manager.RyuApp):
                 ip_proto=0x11,
                 udp_dst=53,
             )
-            self.add_flow(datapath, 1, match, actions)
+            self.add_flow(datapath, 100, match, actions)
             self._send_package(msg, datapath, in_port, actions)
         elif icmp_pkt:
             # ICMP traffic
@@ -207,11 +235,13 @@ class SecondSlicing(app_manager.RyuApp):
                 eth_type=ether_types.ETH_TYPE_IP,
                 ip_proto=0x01,
             )
-            self.add_flow(datapath, 1, match, actions)
+            self.add_flow(datapath, 100, match, actions)
             self._send_package(msg, datapath, in_port, actions)
         else:
             print("General traffic")
             for out_port in out_ports:
+                if QUEUE_ICMP in self.queue_exists[datapath.id].get(out_port, []):
+                    actions.append(ofp_parser.OFPActionSetQueue(QUEUE_GT))
                 actions.append(ofp_parser.OFPActionOutput(out_port))
             match = datapath.ofproto_parser.OFPMatch(
                 in_port=in_port,
@@ -263,14 +293,37 @@ class SecondSlicingController(ControllerBase):
 
         # Reinstall flow tables to avoid losing connectivity
         for dp_i in self.second_slicing.datapaths:
-            switch_dp = self.second_slicing.datapaths[dp_i]
-            ofp_parser = switch_dp.ofproto_parser
+            datapath = self.second_slicing.datapaths[dp_i]
+            parser = switch_dp.ofproto_parser
             ofp = switch_dp.ofproto
             match = ofp_parser.OFPMatch() 
             actions = [
                 ofp_parser.OFPActionOutput(ofp.OFPP_CONTROLLER, ofp.OFPCML_NO_BUFFER)
             ]
-            self.second_slicing.add_flow(switch_dp, 0, match, actions)
+            self.second_slicing.add_flow(datapath, 0, match, actions)
+
+             # If the only rule present is the one for general traffic (priority=1), forward to the controller HTTP, DNS and ICMP packets
+        
+            match_tcp = parser.OFPMatch(
+                eth_type=ether_types.ETH_TYPE_IP,
+                ip_proto=0x06, # TCP so HTTP
+                tcp_dst=80
+
+            )
+            self.second_slicing.add_flow(datapath, 10, match_tcp, actions)
+
+            match_udp = parser.OFPMatch(
+                eth_type=ether_types.ETH_TYPE_IP,
+                ip_proto=0x11, # UDP so DNS
+                udp_dst=53
+            )
+            self.second_slicing.add_flow(datapath, 10, match_udp, actions)
+
+            match_icmp = parser.OFPMatch(
+                eth_type=ether_types.ETH_TYPE_IP,
+                ip_proto=0x01, # ICMP
+            )
+            self.second_slicing.add_flow(datapath, 10, match_icmp, actions)
 
     def get_active_modes(self):
         global current_modes
