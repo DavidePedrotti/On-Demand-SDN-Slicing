@@ -4,83 +4,22 @@ const baseURL = "http://localhost:8081/controller/"
 const green = "rgb(44, 151, 75)"
 const red = "rgb(172, 17, 17)"
 
-const modeConfigurations = {
-  first: {
-    alwaysOn: { url: "first/always_on_mode", imageSrc: "Topology1AlwaysOnMode.png", caption: "Always On Mode", activeBtn: "alwaysOnBtn", inactiveBtns: ["listenerBtn", "noGuestBtn", "speakerBtn"] },
-    listener: { url: "first/listener_mode", imageSrc: "Topology1ListenerMode.png", caption: "Listener Mode", activeBtn: "listenerBtn", inactiveBtns: ["alwaysOnBtn", "noGuestBtn", "speakerBtn"] },
-    noGuest: { url: "first/no_guest_mode", imageSrc: "Topology1NoGuestMode.png", caption: "No Guest Mode", activeBtn: "noGuestBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "speakerBtn"] },
-    speaker: { url: "first/speaker_mode", imageSrc: "Topology1SpeakerMode.png", caption: "Speaker Mode", activeBtn: "speakerBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "noGuestBtn"] }
-  },
-  second: {
-    first: { url: "second/first_mode", imageSrc: "Topology1SpeakerMode.png", caption: "First Mode", activeBtn: "firstBtn", inactiveBtns: ["secondBtn", "thirdBtn"] },
-    second: { url: "second/second_mode", imageSrc: "Topology1NoGuestMode.png", caption: "Second Mode", activeBtn: "secondBtn", inactiveBtns: ["thirdBtn", "firstBtn"] },
-    third: { url: "second/third_mode", imageSrc: "Topology1ListenerMode.png", caption: "Third Mode", activeBtn: "thirdBtn", inactiveBtns: ["firstBtn", "secondBtn"] }
-  }
-}
+// update buttons color and current mode on load
+document.addEventListener("DOMContentLoaded", function() {
+  getActiveMode("first")
+  getActiveMode("second")
+})
 
-function changeMode(topology, mode) {
-  const modeConfig = modeConfigurations[topology][mode]
-  updateSliceMode(topology, modeConfig.url, modeConfig.imageSrc, modeConfig.caption, modeConfig.activeBtn, ...modeConfig.inactiveBtns)
-}
+// change the slicing mode
+function alwaysOnMode() { changeMode("first", "alwaysOn") }
+function listenerMode() { changeMode("first", "listener") }
+function noGuestMode() { changeMode("first", "noGuest") }
+function speakerMode() { changeMode("first", "speaker") }
+function firstSlice() { changeMode("second", "first") }
+function secondSlice() { changeMode("second", "second") }
+function thirdSlice() { changeMode("second", "third") }
 
-function alwaysOnMode() {
-  changeMode("first", "alwaysOn")
-}
-
-function listenerMode() {
-  changeMode("first", "listener")
-}
-
-function noGuestMode() {
-  changeMode("first", "noGuest")
-}
-
-function speakerMode() {
-  changeMode("first", "speaker")
-}
-
-function firstSlice() {
-  changeMode("second", "first")
-}
-
-function secondSlice() {
-  changeMode("second", "second")
-}
-
-function thirdSlice() {
-  changeMode("second", "third")
-}
-
-function updateSliceMode(topology, url, imageSrc, caption, activeBtn, ...inactiveBtns) {
-  fetch(baseURL + url)
-    .then(response => {
-      if (!response.ok) {
-        document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
-        document.getElementById("connectionStatus").style.color = "red"
-        throw new Error('ERROR ' + response.statusText)
-      }
-      return response.text()
-    })
-    .then(data => {
-      document.getElementById("connectionStatus").textContent = "Slicing mode update was successful"
-      document.getElementById("connectionStatus").style.color = "green"
-      document.getElementById("img").src = baseDir + imageSrc
-      if(topology === "first") {
-        document.getElementById("firstTopology").textContent = "Current: " + caption
-      } else {
-        if(!data)
-          data = "Default mode"
-        document.getElementById("secondTopology").textContent = "Current: " + data
-      }
-      toggleButtonColor(topology, activeBtn, ...inactiveBtns)
-    })
-    .catch(error => {
-      document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
-      document.getElementById("connectionStatus").style.color = "red"
-      console.error('ERROR 2:', error)
-    })
-}
-
+// change the QoS
 function updateQoS() {
   let values = document.getElementById("qosValues").value
   values = values.split(",").map(value => parseInt(value))
@@ -122,19 +61,132 @@ function updateQoS() {
   })
 }
 
-
 // Utils
-function toggleButtonColor(topology, activeBtn, ...inactiveBtns) {
-  if(topology === "first" && getButtonColor(activeBtn) === red) {
-    document.getElementById(activeBtn).style.backgroundColor = green
+function changeMode(topology, mode) {
+  const modeConfig = modeConfigurations[topology][mode]
+  updateSliceMode(topology, modeConfig.url, modeConfig.imageSrc, modeConfig.caption, modeConfig.activeBtn, ...modeConfig.inactiveBtns)
+}
+
+function getActiveMode(topology) {
+  fetch(baseURL + topology + "/active_modes")
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('ERROR ' + response.statusText)
+    }
+    return response.text()
+  })
+  .then(data => {
+    if(!data) {
+      return
+    }
+    let buttons = data.split(",").map(value => parseInt(value)).sort()
+    let textContentId = topology === "first" ? "firstTopology": "secondTopology"
+    document.getElementById(textContentId).textContent = "Current: " + buttons.map(index => btnIndexToCaption[topology][index]).join(", ")
+    toggleButtonColor(topology,buttons.map(index => btnIndexToBtnId[topology][index]))
+  })
+  .catch(error => {
+    console.error('ERROR 2:', error)
+  })
+}
+
+function updateSliceMode(topology, url, imageSrc, caption, activeBtn, ...inactiveBtns) {
+  fetch(baseURL + url)
+    .then(response => {
+      if (!response.ok) {
+        document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
+        document.getElementById("connectionStatus").style.color = "red"
+        throw new Error('ERROR ' + response.statusText)
+      }
+      return response.text()
+    })
+    .then(data => {
+      document.getElementById("connectionStatus").textContent = "Slicing mode update was successful"
+      document.getElementById("connectionStatus").style.color = "green"
+      document.getElementById("img").src = baseDir + imageSrc
+      if(topology === "first") {
+        document.getElementById("firstTopology").textContent = "Current: " + caption
+      } else {
+        data = data.split(",").map(value => modeCaptions[value.trim()]).join(", ")
+        if(!data)
+          data = "Default mode"
+        document.getElementById("secondTopology").textContent = "Current: " + data
+      }
+      toggleButtonColor(topology, activeBtn, ...inactiveBtns)
+    })
+    .catch(error => {
+      document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
+      document.getElementById("connectionStatus").style.color = "red"
+      console.error('ERROR 2:', error)
+    })
+}
+
+const modeConfigurations = {
+  first: {
+    alwaysOn: { url: "first/always_on_mode", imageSrc: "Topology1.png", caption: "Always On Mode", activeBtn: "alwaysOnBtn", inactiveBtns: ["listenerBtn", "noGuestBtn", "speakerBtn"] },
+    listener: { url: "first/listener_mode", imageSrc: "Topology1.png", caption: "Listener Mode", activeBtn: "listenerBtn", inactiveBtns: ["alwaysOnBtn", "noGuestBtn", "speakerBtn"] },
+    noGuest: { url: "first/no_guest_mode", imageSrc: "Topology1.png", caption: "No Guest Mode", activeBtn: "noGuestBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "speakerBtn"] },
+    speaker: { url: "first/speaker_mode", imageSrc: "Topology1.png", caption: "Speaker Mode", activeBtn: "speakerBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "noGuestBtn"] }
+  },
+  second: {
+    first: { url: "second/first_mode", imageSrc: "Topology2.png", caption: "First Mode", activeBtn: "firstBtn", inactiveBtns: ["secondBtn", "thirdBtn"] },
+    second: { url: "second/second_mode", imageSrc: "Topology2.png", caption: "Second Mode", activeBtn: "secondBtn", inactiveBtns: ["thirdBtn", "firstBtn"] },
+    third: { url: "second/third_mode", imageSrc: "Topology2.png", caption: "Third Mode", activeBtn: "thirdBtn", inactiveBtns: ["firstBtn", "secondBtn"] }
+  }
+}
+
+const btnIndexToBtnId = {
+  first: {
+    0: "alwaysOnBtn",
+    1: "listenerBtn",
+    2: "noGuestBtn",
+    3: "speakerBtn"
+  },
+  second: {
+    0: "firstBtn",
+    1: "secondBtn",
+    2: "thirdBtn"
+  }
+}
+
+const btnIndexToCaption = {
+  first: {
+    0: "Always On Mode",
+    1: "Listener Mode",
+    2: "No Guest Mode",
+    3: "Speaker Mode"
+  },
+  second: {
+    0: "First Mode",
+    1: "Second Mode",
+    2: "Third Mode"
+  }
+}
+
+const modeCaptions = {
+  "first_mode": "First Mode",
+  "second_mode": "Second Mode",
+  "third_mode": "Third Mode"
+}
+
+function toggleButtonColor(topology, activeBtns, ...inactiveBtns) {
+  if(!activeBtns) {
+    return
+  }
+  if(topology === "first" && getButtonColor(activeBtns) === red) {
+    document.getElementById(activeBtns).style.backgroundColor = green
     for(let id of inactiveBtns) {
       document.getElementById(id).style.backgroundColor = red
     }
   } else if(topology === "second") {
-    if(getButtonColor(activeBtn) === green) {
-      document.getElementById(activeBtn).style.backgroundColor = red
-    } else {
-      document.getElementById(activeBtn).style.backgroundColor = green
+    if(typeof activeBtns === "string") {
+      activeBtns = [activeBtns]
+    }
+    for(let id of activeBtns) {
+      if(getButtonColor(id) === green) {
+        document.getElementById(id).style.backgroundColor = red
+      } else {
+        document.getElementById(id).style.backgroundColor = green
+      }
     }
   }
 }
@@ -144,3 +196,5 @@ function getButtonColor(activeBtn) {
   var style = getComputedStyle(btn)
   return style['background-color']
 }
+
+export { alwaysOnMode, listenerMode, noGuestMode, speakerMode, firstSlice, secondSlice, thirdSlice, updateQoS }

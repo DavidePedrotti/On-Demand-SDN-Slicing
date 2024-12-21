@@ -11,8 +11,8 @@ from utils import slice_to_port
 
 class FirstTopologyModes(Enum):
     ALWAYS_ON = 0
-    NO_GUEST = 1
-    LISTENER = 2
+    LISTENER = 1
+    NO_GUEST = 2
     SPEAKER = 3
 
 current_mode = FirstTopologyModes.NO_GUEST
@@ -57,12 +57,12 @@ class FirstSlicing(app_manager.RyuApp):
             switch_dp = self.datapaths[dp_i]
             ofp_parser = switch_dp.ofproto_parser
             ofp = switch_dp.ofproto
-            match = ofp_parser.OFPMatch() 
+            match = ofp_parser.OFPMatch()
             actions = [
                 ofp_parser.OFPActionOutput(ofp.OFPP_CONTROLLER, ofp.OFPCML_NO_BUFFER)
             ]
             self.add_flow(switch_dp, 0, match, actions)
-        
+
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
         datapath = ev.datapath
@@ -165,12 +165,18 @@ class FirstSlicingController(ControllerBase):
             "Content-Type": "application/json",
         }
 
+    @route("active_modes", url + "/active_modes", methods=["GET"])
+    def get_active_modes(self, req, **kwargs):
+        headers = self.get_cors_headers()
+        global current_mode
+        return Response(status=200, body=str(current_mode.value), headers=headers)
+
     @route("always_on_mode", url + "/always_on_mode", methods=["GET"])
     def set_always_on_mode(self, req, **kwargs):
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.ALWAYS_ON
-        self.first_slicing.update_slice_to_port(current_mode)
+        self.first_slicing.update_slice(current_mode)
         return Response(status=200, body="Current active mode: Always on", headers=headers)
 
     @route("listener_mode", url + "/listener_mode", methods=["GET"])

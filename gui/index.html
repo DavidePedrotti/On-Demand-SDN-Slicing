@@ -3,7 +3,26 @@
 <head>
   <title>GUI</title>
   <link rel="stylesheet" type="text/css" href="style.css">
-  <script type="text/javascript" src="script.js"></script>
+  <script type="module">
+    import {
+      alwaysOnMode,
+      listenerMode,
+      noGuestMode,
+      speakerMode,
+      firstSlice,
+      secondSlice,
+      thirdSlice,
+      updateQoS
+    } from './script.js'
+    window.alwaysOnMode = alwaysOnMode
+    window.listenerMode = listenerMode
+    window.noGuestMode = noGuestMode
+    window.speakerMode = speakerMode
+    window.firstSlice = firstSlice
+    window.secondSlice = secondSlice
+    window.thirdSlice = thirdSlice
+    window.updateQoS = updateQoS
+  </script>
 </head>
 
 <body>
@@ -13,12 +32,12 @@
       <h3 id="firstTopology" style="text-align: center;font-size: 1.5rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
     </div>
     <div>
-      <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology1">
+      <img id="img" class="firstImg" src="images/Topology1.png" alt="Topology1">
       <div class="buttons" style="text-align: center;">
-        <button class="default-btn" onclick="alwaysOnMode()" id="alwaysOnBtn">Always On Mode</button>
-        <button class="default-btn" onclick="listenerMode()" id="listenerBtn">Listener Mode</button>
-        <button class="default-btn" onclick="noGuestMode()" id="noGuestBtn">No Guest Mode</button>
-        <button class="default-btn" onclick="speakerMode()" id="speakerBtn">Speaker Mode</button>
+        <button class="default-btn" onclick="window.alwaysOnMode()" id="alwaysOnBtn">Always On Mode</button>
+        <button class="default-btn" onclick="window.listenerMode()" id="listenerBtn">Listener Mode</button>
+        <button class="default-btn" onclick="window.noGuestMode()" id="noGuestBtn">No Guest Mode</button>
+        <button class="default-btn" onclick="window.speakerMode()" id="speakerBtn">Speaker Mode</button>
       </div>
     </div>
   </div>
@@ -29,12 +48,12 @@
       <h3 id="secondTopology" style="text-align: center;font-size: 1.5rem;color: blue;margin-top: -15px;">Current: Default Mode</h3>
     </div>
     <div class="content">
-      <img id="img" src="images/Topology1AlwaysOnMode.png" alt="Topology2">
+      <img id="img" class="secondImg" src="images/Topology2.png" alt="Topology2">
     </div>
     <div class="buttons" style="text-align: center;">
-      <button class="default-btn" id="firstBtn" onclick="firstSlice()">First Mode</button>
-      <button class="default-btn" id="secondBtn" onclick="secondSlice()">Second Mode</button>
-      <button class="default-btn" id="thirdBtn" onclick="thirdSlice()">Third Mode</button>
+      <button class="default-btn" id="firstBtn" onclick="window.firstSlice()">First Mode</button>
+      <button class="default-btn" id="secondBtn" onclick="window.secondSlice()">Second Mode</button>
+      <button class="default-btn" id="thirdBtn" onclick="window.thirdSlice()">Third Mode</button>
     </div>
   </div>
   <div class="buttons" style="text-align: center;">
@@ -42,7 +61,7 @@
     <div style="display: none;justify-content: center;align-items: center;" id="qos-class">
       <p style="margin: 0">Update QoS</p>
       <input type="text" style="margin: 0 10px;" id="qosValues">
-      <button onclick="updateQoS()" style="width: 70px;height:20px">Update</button>
+      <button onclick="window.updateQoS()" style="width: 70px;height:20px">Update</button>
     </div>
     <p id="connectionStatus" style="text-align: center;font-size: 1rem;color: green;">Waiting for a request</p>
   </div>
