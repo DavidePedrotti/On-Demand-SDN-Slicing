@@ -181,18 +181,27 @@ If you want to terminate the session, execute the following commands in the term
 ### Testing QoS (second topology)
 
 In the second topology there are 3 queues for each link:
-- TCP traffic on port 80
-- UDP traffic on port 53
+- HTTP traffic on port 80
+- DNS traffic on port 53
 - TODO: add missing one
 
-To test TCP run:
-1. `h5 iperf -s -p 80 &` to run a server `h5` on port 80
-2. `h6 iperf -c h5 -p 80` to run a client `h6` that will connect to `h5`
+To test HTTP run:
+1. `<SERVER_HOST> iperf -s -p 80 &` to run a server `<SERVER_HOST>` on port 80
+2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -p 80` to run a client `<CLIENT_HOST>` that will connect to `<SERVER_HOST>`
+- an example of the server and client hosts can be `h1` and `h2`
 
-To test UDP run:
-1. `h5 iperf -s -u -p 53 &`
-2. `h6 iperf -c h5 -u -b 10m -p 53`
-- Note: it is necessary to specify the bandwidth with `-b` for UDP traffic because it defaults to 1Mbps
+To test DNS run:
+1. `<SERVER_HOST> iperf -s -u -p 53 &`
+2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -u -b 10m -p 53`
+- Note: it is necessary to specify the bandwidth with `-b` for DNS traffic because it defaults to 1Mbps
+
+To test General traffic run:
+1. `<SERVER_HOST> iperf -s -p 40 &` to run a server `<SERVER_HOST>` on port 40
+2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -p 40` to run a client `<CLIENT_HOST>` that will connect to `<SERVER_HOST>`
+- Note: port 40 is just an example, you can use any other port that is not 80 or 53
+- Note: the general traffic will use the remaining bandwidth, so to compute that you can use the formula:
+    - `total_bandwidth - (http_bandwidth + dns_bandwidth + icmp_bandwidth)`
+    - where `total_bandwidth` is the total bandwidth of the link, which is 10Mbps in this case
 
 To list all queues run: `sudo ovs-vsctl list queue`
 
@@ -202,13 +211,13 @@ TODO: add screenshots of the GUI and the terminal commands
 
 ### Endpoints
 
-The endpoints for the first controller are exposed on URL `http://localhost:8081/controller/first` and are:
+The endpoints for the first controller are exposed on URL `http://localhost:8081/controller/first/{endpoint}` and are:
 - `always_on_mode`
 - `listener_mode`
 - `no_guest_mode`
 - `speaker_mode`
 
-The endpoints for the second controller are exposed on URL `http://localhost:8081/controller/second` and are:
+The endpoints for the second controller are exposed on URL `http://localhost:8081/controller/second/{endpoint}` and are:
 - `first_mode`
 - `second_mode`
 - `third_mode`

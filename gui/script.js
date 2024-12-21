@@ -1,4 +1,3 @@
-const baseDir = "images/"
 const baseURL = "http://localhost:8081/controller/"
 
 const green = "rgb(44, 151, 75)"
@@ -64,7 +63,7 @@ function updateQoS() {
 // Utils
 function changeMode(topology, mode) {
   const modeConfig = modeConfigurations[topology][mode]
-  updateSliceMode(topology, modeConfig.url, modeConfig.imageSrc, modeConfig.caption, modeConfig.activeBtn, ...modeConfig.inactiveBtns)
+  updateSliceMode(topology, modeConfig.url, modeConfig.caption, modeConfig.activeBtn, ...modeConfig.inactiveBtns)
 }
 
 function getActiveMode(topology) {
@@ -81,15 +80,19 @@ function getActiveMode(topology) {
     }
     let buttons = data.split(",").map(value => parseInt(value)).sort()
     let textContentId = topology === "first" ? "firstTopology": "secondTopology"
-    document.getElementById(textContentId).textContent = "Current: " + buttons.map(index => btnIndexToCaption[topology][index]).join(", ")
-    toggleButtonColor(topology,buttons.map(index => btnIndexToBtnId[topology][index]))
+    if(isNaN(buttons[0])) {
+      document.getElementById(textContentId).textContent = "Current: Default Mode"
+    } else {
+      document.getElementById(textContentId).textContent = "Current: " + buttons.map(index => btnIndexToCaption[topology][index]).join(", ")
+      toggleButtonColor(topology,buttons.map(index => btnIndexToBtnId[topology][index]))
+    }
   })
   .catch(error => {
     console.error('ERROR 2:', error)
   })
 }
 
-function updateSliceMode(topology, url, imageSrc, caption, activeBtn, ...inactiveBtns) {
+function updateSliceMode(topology, url, caption, activeBtn, ...inactiveBtns) {
   fetch(baseURL + url)
     .then(response => {
       if (!response.ok) {
@@ -102,7 +105,6 @@ function updateSliceMode(topology, url, imageSrc, caption, activeBtn, ...inactiv
     .then(data => {
       document.getElementById("connectionStatus").textContent = "Slicing mode update was successful"
       document.getElementById("connectionStatus").style.color = "green"
-      document.getElementById("img").src = baseDir + imageSrc
       if(topology === "first") {
         document.getElementById("firstTopology").textContent = "Current: " + caption
       } else {
@@ -122,15 +124,15 @@ function updateSliceMode(topology, url, imageSrc, caption, activeBtn, ...inactiv
 
 const modeConfigurations = {
   first: {
-    alwaysOn: { url: "first/always_on_mode", imageSrc: "Topology1.png", caption: "Always On Mode", activeBtn: "alwaysOnBtn", inactiveBtns: ["listenerBtn", "noGuestBtn", "speakerBtn"] },
-    listener: { url: "first/listener_mode", imageSrc: "Topology1.png", caption: "Listener Mode", activeBtn: "listenerBtn", inactiveBtns: ["alwaysOnBtn", "noGuestBtn", "speakerBtn"] },
-    noGuest: { url: "first/no_guest_mode", imageSrc: "Topology1.png", caption: "No Guest Mode", activeBtn: "noGuestBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "speakerBtn"] },
-    speaker: { url: "first/speaker_mode", imageSrc: "Topology1.png", caption: "Speaker Mode", activeBtn: "speakerBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "noGuestBtn"] }
+    alwaysOn: { url: "first/always_on_mode", caption: "Always On Mode", activeBtn: "alwaysOnBtn", inactiveBtns: ["listenerBtn", "noGuestBtn", "speakerBtn"] },
+    listener: { url: "first/listener_mode", caption: "Listener Mode", activeBtn: "listenerBtn", inactiveBtns: ["alwaysOnBtn", "noGuestBtn", "speakerBtn"] },
+    noGuest: { url: "first/no_guest_mode", caption: "No Guest Mode", activeBtn: "noGuestBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "speakerBtn"] },
+    speaker: { url: "first/speaker_mode", caption: "Speaker Mode", activeBtn: "speakerBtn", inactiveBtns: ["alwaysOnBtn", "listenerBtn", "noGuestBtn"] }
   },
   second: {
-    first: { url: "second/first_mode", imageSrc: "Topology2.png", caption: "First Mode", activeBtn: "firstBtn", inactiveBtns: ["secondBtn", "thirdBtn"] },
-    second: { url: "second/second_mode", imageSrc: "Topology2.png", caption: "Second Mode", activeBtn: "secondBtn", inactiveBtns: ["thirdBtn", "firstBtn"] },
-    third: { url: "second/third_mode", imageSrc: "Topology2.png", caption: "Third Mode", activeBtn: "thirdBtn", inactiveBtns: ["firstBtn", "secondBtn"] }
+    first: { url: "second/first_mode", caption: "First Mode", activeBtn: "firstBtn", inactiveBtns: ["secondBtn", "thirdBtn"] },
+    second: { url: "second/second_mode", caption: "Second Mode", activeBtn: "secondBtn", inactiveBtns: ["thirdBtn", "firstBtn"] },
+    third: { url: "second/third_mode", caption: "Third Mode", activeBtn: "thirdBtn", inactiveBtns: ["firstBtn", "secondBtn"] }
   }
 }
 
