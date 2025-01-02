@@ -1,6 +1,4 @@
 # On-Demand SDN Slicing
-TODO: there are many duplicated descriptions, try to unify them if possible
-
 TODO: add a brief description of the project (mentioning comnetsemu, mininet, ryu, etc.)
 
 ## Table of Contents
@@ -29,6 +27,11 @@ TODO: add a brief description of the project (mentioning comnetsemu, mininet, ry
 This project aims to implement an on-demand slicing solution, with a web interface that interacts with a Ryu controller and a Mininet topology. The application allows the user to enable and disable different slices in the network, as well as to modify the QoS parameters of the network, by allocating different bandwidths to different queues which represent different types of traffic.
 
 The project is divided into two topologies, each with its own controller. The first one allows the user to enable one slice at a time, while the second one allows the user to enable multiple slices at the same time and to modify the QoS parameters of the network.
+
+Key technologies used:
+- ComNetSemu and Mininet for network simulation
+- Ryu as the SDN controller
+- HTML, CSS, and JavaScript for the web interface
 
 ## Project Structure
 The structure of the project is as follows:
@@ -72,6 +75,8 @@ The structure of the first topology is the following:
 - 10 hosts, of which one acts as a server and one as a database, numbered from h1 to h10
 - 5 switches numbered from s1 to s5
 
+The only hosts that can communicate with the database are the server and the reception.
+
 ### Slices
 
 The slices that can be enabled in the first topology are:
@@ -82,25 +87,24 @@ The slices that can be enabled in the first topology are:
 
 In the following images, green links represent the active links, while black links represent the inactive links.
 
-TODO: add a description for each slice
-
 #### Always On Mode
 
-In this mode, the server and the database are the only hosts that can communicate with each other.
+The server and the database are the only hosts that can communicate with each other.
 ![Always On mode](./gui/images/Topology1AlwaysOnMode.png)
 
 #### Listener Mode
 
-The idea behind this mode is to allow all hosts to communicate when the speaker is inactive
+All hosts can communicate when the speaker is inactive
 ![Listener mode](./gui/images/Topology1ListenerMode.png)
 
 #### No Guest Mode
 
-This mode is ideally used when there is no one in the waiting room and the speaker is inactive
+Used when no one is in the waiting room, and the speaker is inactive
 ![No Guest mode](./gui/images/Topology1NoGuestMode.png)
 
 #### Speaker Mode
 
+Allows the listeners to communicate only with the speaker
 ![Speaker mode](./gui/images/Topology1SpeakerMode.png)
 
 ## Second Topology
@@ -121,18 +125,16 @@ In the following images, green links represent the active links, while black lin
 
 These slices can be enabled at the same time.
 
-TODO: add a description for each slice
-
 #### First Mode
-
+Connects h1, h6 and h7 to each other
 ![First mode](./gui/images/Topology2FirstMode.png)
 
 #### Second Mode
-
+Connects h2, h5 and h8 to each other
 ![Second mode](./gui/images/Topology2SecondMode.png)
 
 #### Third Mode
-
+Connects h3, h4, h9 and h10 to each other
 ![Third mode](./gui/images/Topology2ThirdMode.png)
 
 ## Running and Testing the Application
@@ -183,7 +185,7 @@ If you want to terminate the session, execute the following commands in the term
 In the second topology there are 3 queues for each link:
 - HTTP traffic on port 80
 - DNS traffic on port 53
-- TODO: add missing one
+- ICMP traffic
 
 To test HTTP run:
 1. `<SERVER_HOST> iperf -s -p 80 &` to run a server `<SERVER_HOST>` on port 80
@@ -194,6 +196,8 @@ To test DNS run:
 1. `<SERVER_HOST> iperf -s -u -p 53 &`
 2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -u -b 10m -p 53`
 - Note: it is necessary to specify the bandwidth with `-b` for DNS traffic because it defaults to 1Mbps
+
+TODO: add a note about ICMP traffic
 
 To test General traffic run:
 1. `<SERVER_HOST> iperf -s -p 40 &` to run a server `<SERVER_HOST>` on port 40
