@@ -1,6 +1,7 @@
 # On-Demand SDN Slicing
 ## Table of Contents
 - [Project Description](#project-description)
+    - [Key Technologies Used](#key-technologies-used)
 - [Project Structure](#project-structure)
 - [First Topology](#first-topology)
     - [Slices](#slices)
@@ -26,7 +27,7 @@ This project aims to implement an on-demand slicing solution, with a web interfa
 
 The project is divided into two topologies, each with its own controller. The first one allows the user to enable one slice at a time, while the second one allows the user to enable multiple slices at the same time and to modify the QoS parameters of the network.
 
-### Key technologies used
+### Key Technologies Used
 
 The key technologies used in the project are:
 - Comnetsemu: a network emulator that comes with all the necessary tools to run the project
@@ -38,6 +39,7 @@ The key technologies used in the project are:
 ## Project Structure
 The structure of the project is as follows:
 ``` bash
+├── docs_images
 ├── gui
 │   ├── images
 │   ├── index.html
@@ -59,6 +61,7 @@ The structure of the project is as follows:
         ├── topology.py
         └── utils.p
 ```
+- `docs_images` contains the images used for the documentation
 - `gui/` contains the files to run the web interface
 - `topologies/` contains the two topologies: `first_topology/` and `second_topology/`
     - each topology contains the following files
