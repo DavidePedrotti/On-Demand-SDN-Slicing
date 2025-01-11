@@ -27,7 +27,7 @@ QUEUE_GT = 456 # General traffic queue
 class SecondSlicing(app_manager.RyuApp):
     """
     Ryu application for managing network slicing.
-    """    
+    """
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     _CONTEXTS = {"wsgi": WSGIApplication}
@@ -52,7 +52,7 @@ class SecondSlicing(app_manager.RyuApp):
 
         Returns:
             None
-        """        
+        """
         datapath = ev.datapath
         if ev.state == MAIN_DISPATCHER:
             self.datapaths[datapath.id] = datapath
@@ -89,7 +89,7 @@ class SecondSlicing(app_manager.RyuApp):
         self.add_flow(datapath, 0, match, actions)
 
         # If the only rule present is the one for general traffic (priority=1), forward to the controller HTTP, DNS and ICMP packets
-        
+
         match_tcp = parser.OFPMatch(
             eth_type=ether_types.ETH_TYPE_IP,
             ip_proto=0x06, # TCP so HTTP
@@ -144,7 +144,7 @@ class SecondSlicing(app_manager.RyuApp):
 
         Returns:
             None
-        """        
+        """
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
@@ -167,7 +167,7 @@ class SecondSlicing(app_manager.RyuApp):
 
         Returns:
             None
-        """        
+        """
         data = None
         ofproto = datapath.ofproto
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
@@ -186,8 +186,8 @@ class SecondSlicing(app_manager.RyuApp):
     def _packet_in_handler(self, ev):
         """
         Handle Packet-In events sent by switches to the controller.
-        These events occur when a packet does not match any flow rule or is explicitly 
-        transmitted to the controller. The function processes the packet, determining its type 
+        These events occur when a packet does not match any flow rule or is explicitly
+        transmitted to the controller. The function processes the packet, determining its type
         (HTTP, DNS, ICMP, or normal traffic) and creates appropriate actions and flow rules.
 
         Args:
@@ -215,7 +215,7 @@ class SecondSlicing(app_manager.RyuApp):
         ipv4_pkt = pkt.get_protocol(ipv4.ipv4)
         if ipv4_pkt is None: # Packets that not contains ipv4 layer will be dropped, need to check this
             return
-        
+
         out_ports = []
         switch_map = None
         entries = None
@@ -362,7 +362,7 @@ class SecondSlicingController(ControllerBase):
             self.second_slicing.add_flow(datapath, 0, match, actions)
 
              # If the only rule present is the one for general traffic (priority=1), forward to the controller HTTP, DNS and ICMP packets
-        
+
             match_tcp = parser.OFPMatch(
                 eth_type=ether_types.ETH_TYPE_IP,
                 ip_proto=0x06, # TCP so HTTP
@@ -403,7 +403,7 @@ class SecondSlicingController(ControllerBase):
 
         Args:
             mode_name (str): The mode to set (e.g., "first_mode", "second_mode", "third_mode").
-    
+
         Returns: None
         """
         global current_modes
@@ -492,8 +492,8 @@ class SecondSlicingController(ControllerBase):
         data = json.loads(req.body.decode("utf-8"))
         values = data["values"]
 
-        if len(values) != 3 or sum(values) > 10:
-            return Response(status=400, body="The request must contain 3 values of total sum 10", headers=headers)
+        if len(values) != 3 or sum(values) > 9 or any(value < 1 for value in values):
+            return Response(status=400, body="The request must contain 3 values of total sum 9, with each value being greater than or equal to 1", headers=headers)
 
         values = [value * 1_000_000 for value in values] # convert the values into MBs
         values = [str(value) for value in values] # convert the values into strings to pass them as arguments

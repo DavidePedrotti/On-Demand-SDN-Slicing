@@ -23,12 +23,16 @@ function updateQoS() {
   let values = document.getElementById("qosValues").value
   values = values.split(",").map(value => parseInt(value))
   let total = values.reduce((a, b) => a + b, 0)
-  if(total > 10) {
-    document.getElementById("connectionStatus").textContent = "The sum of the values must be at most 10"
+  if(total > 9) {
+    document.getElementById("connectionStatus").textContent = "The sum of the values must be at most 9"
     document.getElementById("connectionStatus").style.color = "red"
     return
   } else if(values.length !== 3) {
     document.getElementById("connectionStatus").textContent = "The number of values must be 3"
+    document.getElementById("connectionStatus").style.color = "red"
+    return
+  } else if(values.some(value => value < 1)) {
+    document.getElementById("connectionStatus").textContent = "Each value must be greater than or equal to 1"
     document.getElementById("connectionStatus").style.color = "red"
     return
   }

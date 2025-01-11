@@ -202,7 +202,7 @@ In the second topology there are 4 queues for each link:
 The queues's values can be set from the GUI:
 - In the input box present in the second topology, enter three comma-separated values representing the bandwidth allocated respectively to HTTP, DNS, and ICMP. The remaining bandwidth on the link will be allocated to General traffic
 - Each integer represents a MBps. For example, entering `1,5,3` will allocate 1MBps to HTTP, 5MBps to DNS, 3MBps to ICMP and 1MBps to General traffic
-- Ensure that the total sum of the three allocated values does not exceed 10 as all the links have bandwidth 10MBps
+- Ensure that the total sum of the three allocated values does not exceed 9 as all the links have bandwidth 10MBps and each queue has a minimum bandwidth of 1MBps
 
 To test HTTP run:
 1. `<SERVER_HOST> iperf -s -p 80 &` to run a server `<SERVER_HOST>` on port 80

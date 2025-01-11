@@ -8,7 +8,7 @@ from qos import QoS
 
 HTTP_SIZE = "4" + "0" * 6 # 4Mbps
 DNS_SIZE = "2" + "0" * 6
-ICMP_SIZE = "4" + "0" * 6
+ICMP_SIZE = "3" + "0" * 6
 
 class SecondTopology(Topo):
     """
@@ -59,7 +59,7 @@ if __name__ == "__main__":
     # Set the log level to info
     setLogLevel("info")
     topo = SecondTopology()
-    # Create the network    
+    # Create the network
     net = Mininet(
         topo = topo,
         switch = OVSKernelSwitch,
@@ -68,7 +68,7 @@ if __name__ == "__main__":
         autoStaticArp = True,
         link = TCLink
     )
-    # Create and add the controller to the network    
+    # Create and add the controller to the network
     controller = RemoteController("c0", ip="127.0.0.1", port = 6633)
     net.addController(controller)
 
