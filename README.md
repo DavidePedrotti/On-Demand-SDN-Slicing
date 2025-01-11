@@ -1,8 +1,7 @@
 # On-Demand SDN Slicing
-TODO: add a brief description of the project (mentioning comnetsemu, mininet, ryu, etc.)
-
 ## Table of Contents
 - [Project Description](#project-description)
+    - [Key Technologies Used](#key-technologies-used)
 - [Project Structure](#project-structure)
 - [First Topology](#first-topology)
     - [Slices](#slices)
@@ -28,14 +27,19 @@ This project aims to implement an on-demand slicing solution, with a web interfa
 
 The project is divided into two topologies, each with its own controller. The first one allows the user to enable one slice at a time, while the second one allows the user to enable multiple slices at the same time and to modify the QoS parameters of the network.
 
-Key technologies used:
-- ComNetSemu and Mininet for network simulation
-- Ryu as the SDN controller
+### Key Technologies Used
+
+The key technologies used in the project are:
+- Comnetsemu: a network emulator that comes with all the necessary tools to run the project
+- Mininet: a network emulator that allows the creation of a network topology
+- Ryu: an SDN framework that provides a set of tools such as a controller and a REST API to interact with the network
+- Python for the network anc controller logic
 - HTML, CSS, and JavaScript for the web interface
 
 ## Project Structure
 The structure of the project is as follows:
 ``` bash
+├── docs_images
 ├── gui
 │   ├── images
 │   ├── index.html
@@ -57,6 +61,7 @@ The structure of the project is as follows:
         ├── topology.py
         └── utils.p
 ```
+- `docs_images` contains the images used for the documentation
 - `gui/` contains the files to run the web interface
 - `topologies/` contains the two topologies: `first_topology/` and `second_topology/`
     - each topology contains the following files
@@ -141,7 +146,8 @@ Connects h3, h4, h9 and h10 to each other
 
 This section contains all the necessary commands to run and test the application. The application can be run either in the GUI or in the terminal.
 
-TODO: add requirements to run the application
+The application can be run via [ComNetsEmu](https://git.comnets.net/public-repo/comnetsemu), or by instaling all the necessary requirements.
+
 
 ### Running the Application in the GUI
 This section contains all the necessary commands to run and test the application inside the GUI
@@ -154,6 +160,11 @@ This section contains all the necessary commands to run and test the application
 3. Running the gui
     - navigate to the `gui/` directory
     - execute `python3 -m http.server 8080`
+
+The GUI can be accessed at `http://localhost:8080/` and looks like this:
+![GUI](docs_images/Gui.png)
+- It is possible select the topology and the slices to enable
+- It is also possible to update the QoS parameters in the second topology
 
 Note: it is important that you run mininet before running the controller, otherwise the controller will not be able to see the queues (in the second topology)
 
@@ -182,22 +193,32 @@ If you want to terminate the session, execute the following commands in the term
 
 ### Testing QoS (second topology)
 
-In the second topology there are 3 queues for each link:
+In the second topology there are 4 queues for each link:
 - HTTP traffic on port 80
 - DNS traffic on port 53
 - ICMP traffic
+- General traffic (all other types of traffic)
+
+The queues's values can be set from the GUI:
+- In the input box present in the second topology, enter three comma-separated values representing the bandwidth allocated respectively to HTTP, DNS, and ICMP. The remaining bandwidth on the link will be allocated to General traffic
+- Each integer represents a MBps. For example, entering `1,5,3` will allocate 1MBps to HTTP, 5MBps to DNS, 3MBps to ICMP and 1MBps to General traffic
+- Ensure that the total sum of the three allocated values does not exceed 10 as all the links have bandwidth 10MBps
 
 To test HTTP run:
 1. `<SERVER_HOST> iperf -s -p 80 &` to run a server `<SERVER_HOST>` on port 80
 2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -p 80` to run a client `<CLIENT_HOST>` that will connect to `<SERVER_HOST>`
-- an example of the server and client hosts can be `h1` and `h2`
+- an example of the server and client hosts can be `h1` and `h6`
+
+![HTTP test](docs_images/HTTPTest.png)
 
 To test DNS run:
 1. `<SERVER_HOST> iperf -s -u -p 53 &`
 2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -u -b 10m -p 53`
 - Note: it is necessary to specify the bandwidth with `-b` for DNS traffic because it defaults to 1Mbps
 
-TODO: add a note about ICMP traffic
+![DNS test](docs_images/DNSTest.png)
+
+Since ICMP is primarely used to check the reachability of hosts through the `ping`command, it is not possible to test it directly.
 
 To test General traffic run:
 1. `<SERVER_HOST> iperf -s -p 40 &` to run a server `<SERVER_HOST>` on port 40
@@ -207,21 +228,21 @@ To test General traffic run:
     - `total_bandwidth - (http_bandwidth + dns_bandwidth + icmp_bandwidth)`
     - where `total_bandwidth` is the total bandwidth of the link, which is 10Mbps in this case
 
+![General test](docs_images/GeneralTest.png)
+
 To list all queues run: `sudo ovs-vsctl list queue`
 
 Note: the queues are automatically deleted whenever the new queues are created
 
-TODO: add screenshots of the GUI and the terminal commands
-
 ### Endpoints
 
-The endpoints for the first controller are exposed on URL `http://localhost:8081/controller/first/{endpoint}` and are:
+The slices for the first controller are exposed on URL `http://localhost:8081/controller/first/{slice_name}` and are:
 - `always_on_mode`
 - `listener_mode`
 - `no_guest_mode`
 - `speaker_mode`
 
-The endpoints for the second controller are exposed on URL `http://localhost:8081/controller/second/{endpoint}` and are:
+The slices for the second controller are exposed on URL `http://localhost:8081/controller/second/{slice_name}` and are:
 - `first_mode`
 - `second_mode`
 - `third_mode`
