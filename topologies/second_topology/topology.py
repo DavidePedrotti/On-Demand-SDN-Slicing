@@ -11,13 +11,19 @@ DNS_SIZE = "2" + "0" * 6
 ICMP_SIZE = "4" + "0" * 6
 
 class SecondTopology(Topo):
+    """
+    SecondTopology class defines the network topology for the second scenario.
+    It includes 10 hosts and 4 switches with specific link configurations.
+    """
     def __init__(self):
+        """
+        Build the custom topology.
+        """
         # Initialize topology
         Topo.__init__(self)
 
         link_config = dict()
         host_link_config = dict()
-
 
         # Add hosts
         host_list = dict(inNamespace=True)
@@ -50,8 +56,10 @@ class SecondTopology(Topo):
 topos = {"sdn_slicing_second": (lambda: SecondTopology())}
 
 if __name__ == "__main__":
+    # Set the log level to info
     setLogLevel("info")
     topo = SecondTopology()
+    # Create the network    
     net = Mininet(
         topo = topo,
         switch = OVSKernelSwitch,
@@ -60,10 +68,11 @@ if __name__ == "__main__":
         autoStaticArp = True,
         link = TCLink
     )
-
+    # Create and add the controller to the network    
     controller = RemoteController("c0", ip="127.0.0.1", port = 6633)
     net.addController(controller)
 
+    # Build and start the network
     net.build()
     net.start()
 

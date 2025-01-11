@@ -1,21 +1,43 @@
-from pprint import pprint
-
 def get_IP_address(host_name: str) -> str:
+    """
+    Get the IP address for a given host name.
 
+    Args:
+        host_name (str): The name of the host (e.g., "h1", "h2", etc.).
+
+    Returns:
+        str: The IP address corresponding to the host name.
+    """
     ip_mapping = {
         f"h{i}": f"192.168.0.{i}" for i in range(1, 11)
     }
     return ip_mapping.get(host_name)
 
 def get_MAC_address (host_name: str) -> str:
+    """
+    Get the MAC address for a given host name.
 
+    Args:
+        host_name (str): The name of the host (e.g., "h1", "h2", etc.).
+
+    Returns:
+        str: The MAC address corresponding to the host name.
+    """
     mac_mapping = {
         f"h{i}": f"00:00:00:00:00:{i:02x}" for i in range(1, 11)
     }
     return mac_mapping.get(host_name)
 
 def get_dpid (host_name: str) -> int:
+    """
+    Get the DPID (Datapath ID) for a given switch name.
 
+    Args:
+        host_name (str): The name of the switch (e.g., "s1", "s2", etc.).
+
+    Returns:
+        int: The DPID corresponding to the switch name.
+    """
     dpid_mapping = {
         f"s{i}": f"{i:016x}" for i in range(1, 6)
     }
@@ -23,7 +45,16 @@ def get_dpid (host_name: str) -> int:
 
 
 def get_port (src: str, dst: str) -> int:
+    """
+    Get the port number for a given source and destination.
 
+    Args:
+        src (str): The source switch or host.
+        dst (str): The destination switch or host.
+
+    Returns:
+        int: The port number for the given source and destination.
+    """
     link_mapping = {
         "s1": {
             "h1": 3,
@@ -64,9 +95,30 @@ def get_port (src: str, dst: str) -> int:
     return link_mapping.get(src).get(dst)
 
 def generate_link_entries(src_ip, dst_ips, switch, ports):
+    """
+    Generate link entries for a given source IP, destination IPs, switch, and ports.
+
+    Args:
+        src_ip (str): The source IP address.
+        dst_ips (list): A list of destination IP addresses.
+        switch (str): The switch name.
+        ports (list): A list of ports corresponding to the destination IPs.
+
+    Returns:
+        dict: A dictionary representing the link entries.
+    """
     return {src_ip: [{dst_ip: get_port(switch, port)} for dst_ip, port in zip(dst_ips, ports)]}
 
 def slice_to_port(scenario = 0):
+    """
+    Generate port mappings for different slicing scenarios.
+
+    Args:
+        scenario (int): The scenario number (0, 1, 2, or 3). Defaults to 0.
+
+    Returns:
+        dict: A dictionary representing the port mappings for the given scenario.
+    """
     if scenario == 0:
         return {
             get_dpid("s1"): {

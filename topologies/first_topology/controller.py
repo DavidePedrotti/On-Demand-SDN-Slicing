@@ -10,6 +10,9 @@ from enum import Enum
 from utils import slice_to_port
 
 class FirstTopologyModes(Enum):
+    """
+    Enum representing different slicing modes.
+    """
     ALWAYS_ON = 0
     LISTENER = 1
     NO_GUEST = 2
@@ -21,6 +24,9 @@ first_slicing_instance_name = "first_slicing_api_app"
 url = "/controller/first"
 
 class FirstSlicing(app_manager.RyuApp):
+    """
+    Ryu application for managing network slicing.
+    """
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     _CONTEXTS = {"wsgi": WSGIApplication}
@@ -35,6 +41,18 @@ class FirstSlicing(app_manager.RyuApp):
         wsgi.register(FirstSlicingController, {first_slicing_instance_name: self})
 
     def update_slice(self, mode):
+        """
+        Update the port mappings according to the specified mode, 
+        remove all existing flow entries from the switches and then reinstall a 
+        default flow entry to ensure connectivity.
+
+        Args:
+            mode (FirstTopologyModes): The mode used to update the slice.
+
+        Returns:
+            None
+        """
+        # Get the port mappings for the given mode
         self.slice_to_port = slice_to_port(mode.value)
         print(f"Slice changed to {mode}!")
 
@@ -65,6 +83,15 @@ class FirstSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
+        """
+        Handle state changes of switches.
+
+        Args:
+            ev (EventOFPStateChange): The event representing the state change.
+
+        Returns:
+            None
+        """
         datapath = ev.datapath
         if ev.state == MAIN_DISPATCHER:
             self.datapaths[datapath.id] = datapath
@@ -76,11 +103,20 @@ class FirstSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
+        """
+        Install a table-miss flow entry in the switch's flow table. 
+
+        Args:
+            ev (EventOFPSwitchFeatures): The event representing the switch features.
+
+        Returns:
+            None
+        """
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
-        # install the table-miss flow entry.
+        # Install the table-miss flow entry.
         match = parser.OFPMatch()
         actions = [
             parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)
@@ -88,6 +124,18 @@ class FirstSlicing(app_manager.RyuApp):
         self.add_flow(datapath, 0, match, actions)
 
     def add_flow(self, datapath, priority, match, actions):
+        """
+        Add a flow entry to the switch's flow table.
+
+        Args:
+            datapath (Datapath): The datapath of the switch.
+            priority (int): The priority of the flow entry.
+            match (OFPMatch): The match criteria for the flow entry.
+            actions (list): The actions to apply for the flow entry.
+
+        Returns:
+            None
+        """
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
@@ -98,6 +146,18 @@ class FirstSlicing(app_manager.RyuApp):
         datapath.send_msg(mod)
 
     def _send_package(self, msg, datapath, in_port, actions):
+        """
+        Send an OpenFlow packet-out message to the switch.
+
+        Args:
+            msg (OFPMsg): The OpenFlow message.
+            datapath (Datapath): The datapath of the switch.
+            in_port (int): The input port.
+            actions (list): The actions to apply.
+
+        Returns:
+            None
+        """
         data = None
         ofproto = datapath.ofproto
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
@@ -114,6 +174,18 @@ class FirstSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
+        """
+        Handle Packet-In events sent by switches to the controller.
+        These events occur when a packet does not match any flow rule or is explicitly 
+        transmitted to the controller. The function processes the packet, extracts the useful information
+        and send it to the correct port by adding a new flow entry.
+
+        Args:
+            ev (EventOFPPacketIn): TThe event containing the Packet-In message.
+
+        Returns:
+            None
+        """
         msg = ev.msg
         datapath = msg.datapath
         in_port = msg.match["in_port"]
@@ -152,12 +224,23 @@ class FirstSlicing(app_manager.RyuApp):
             self._send_package(msg, datapath, in_port, actions)
 
 class FirstSlicingController(ControllerBase):
+    """
+    Controller API for managing network slicing modes.
+    """
     def __init__(self, req, link, data, **config):
         super(FirstSlicingController, self).__init__(req, link, data, **config)
         self.first_slicing = data[first_slicing_instance_name]
 
     @staticmethod
     def get_cors_headers():
+        """
+        Get CORS headers.
+
+        Args: None
+
+        Returns:
+            dict: A dictionary containing CORS headers.
+        """
         return {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -167,12 +250,30 @@ class FirstSlicingController(ControllerBase):
 
     @route("active_modes", url + "/active_modes", methods=["GET"])
     def get_active_modes(self, req, **kwargs):
+        """
+        Get the current active mode.
+
+        Args:
+            req (Request): The request object.
+
+        Returns:
+            Response: The response containing the current active mode.
+        """
         headers = self.get_cors_headers()
         global current_mode
         return Response(status=200, body=str(current_mode.value), headers=headers)
 
     @route("always_on_mode", url + "/always_on_mode", methods=["GET"])
     def set_always_on_mode(self, req, **kwargs):
+        """
+        Set the mode to ALWAYS_ON.
+
+        Args:
+            req (Request): The request object.
+
+        Returns:
+            Response: The response confirming the mode change.
+        """
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.ALWAYS_ON
@@ -181,6 +282,15 @@ class FirstSlicingController(ControllerBase):
 
     @route("listener_mode", url + "/listener_mode", methods=["GET"])
     def set_listener_mode(self, req, **kwargs):
+        """
+        Set the mode to LISTENER.
+
+        Args:
+            req (Request): The request object.
+
+        Returns:
+            Response: The response confirming the mode change.
+        """
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.LISTENER
@@ -189,6 +299,15 @@ class FirstSlicingController(ControllerBase):
 
     @route("no_guest_mode", url + "/no_guest_mode", methods=["GET"])
     def set_no_guest_mode(self, req, **kwargs):
+        """
+        Set the mode to NO_GUEST.
+
+        Args:
+            req (Request): The request object.
+
+        Returns:
+            Response: The response confirming the mode change.
+        """
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.NO_GUEST
@@ -197,6 +316,15 @@ class FirstSlicingController(ControllerBase):
 
     @route("speaker_mode", url + "/speaker_mode", methods=["GET"])
     def set_speaker_mode(self, req, **kwargs):
+        """
+        Set the mode to SPEAKER.
+
+        Args:
+            req (Request): The request object.
+
+        Returns:
+            Response: The response confirming the mode change.
+        """
         global current_mode
         headers = self.get_cors_headers()
         current_mode = FirstTopologyModes.SPEAKER

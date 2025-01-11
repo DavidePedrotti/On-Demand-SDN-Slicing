@@ -25,6 +25,9 @@ QUEUE_GT = 456 # General traffic queue
 
 
 class SecondSlicing(app_manager.RyuApp):
+    """
+    Ryu application for managing network slicing.
+    """    
     OFP_VERSIONS = [ofproto_v1_3.OFP_VERSION]
 
     _CONTEXTS = {"wsgi": WSGIApplication}
@@ -33,17 +36,6 @@ class SecondSlicing(app_manager.RyuApp):
         super(SecondSlicing, self).__init__(*args, **kwargs)
 
         self.slice_to_port = slice_to_port()
-
-        """
-        self.slice_to_port = {
-            3: { 1: [3], 3: [1, 2], 2: [3]},
-            2: { 5: [3, 2], 3: [5], 2: [5]}
-            #1: { 1: [3], 3: [1] },
-            #2: { 4: [5, 1], 5: [4,3], 3: [5], 1: [4] },
-            #3: { 1: [2,3], 2: [1,3], 3: [1,2] }
-        }
-        # self.slice_to_port = slice_to_port()
-        """
         self.queue_exists = {}
         self.datapaths = {}
 
@@ -52,6 +44,15 @@ class SecondSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
+        """
+        Handle state changes of switches.
+
+        Args:
+            ev (EventOFPStateChange): The event representing the state change.
+
+        Returns:
+            None
+        """        
         datapath = ev.datapath
         if ev.state == MAIN_DISPATCHER:
             self.datapaths[datapath.id] = datapath
@@ -63,6 +64,18 @@ class SecondSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
     def switch_features_handler(self, ev):
+        """
+        Handle the switch features event and establish flow entries for packet matching.
+        This method creates:
+        - A flow entry with priority 0 to forward packets that do not match any existing flow rules to the controller.
+        - Flow entries for HTTP (TCP port 80), DNS (UDP port 53), and ICMP packets, that are forwarded to the controller with priority 10.
+
+        Args:
+            ev (EventOFPSwitchFeatures): The event representing the switch features.
+
+        Returns:
+            None
+        """
         datapath = ev.msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
@@ -120,6 +133,18 @@ class SecondSlicing(app_manager.RyuApp):
         # Verify that a queue exist for a given port, otherwise if the queue doesn't exist the packet would be dropped
 
     def add_flow(self, datapath, priority, match, actions):
+        """
+        Add a flow entry to the switch's flow table.
+
+        Args:
+            datapath (Datapath): The datapath of the switch.
+            priority (int): The priority of the flow entry.
+            match (OFPMatch): The match criteria for the flow entry.
+            actions (list): The actions to apply for the flow entry.
+
+        Returns:
+            None
+        """        
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
@@ -131,6 +156,18 @@ class SecondSlicing(app_manager.RyuApp):
         datapath.send_msg(mod)
 
     def _send_package(self, msg, datapath, in_port, actions):
+        """
+        Send an OpenFlow packet-out message to the switch.
+
+        Args:
+            msg (OFPMsg): The OpenFlow message.
+            datapath (Datapath): The datapath of the switch.
+            in_port (int): The input port.
+            actions (list): The actions to apply.
+
+        Returns:
+            None
+        """        
         data = None
         ofproto = datapath.ofproto
         if msg.buffer_id == ofproto.OFP_NO_BUFFER:
@@ -147,6 +184,18 @@ class SecondSlicing(app_manager.RyuApp):
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
+        """
+        Handle Packet-In events sent by switches to the controller.
+        These events occur when a packet does not match any flow rule or is explicitly 
+        transmitted to the controller. The function processes the packet, determining its type 
+        (HTTP, DNS, ICMP, or normal traffic) and creates appropriate actions and flow rules.
+
+        Args:
+            ev (EventOFPPacketIn): The event containing the Packet-In message.
+
+        Returns:
+            None
+        """
         global current_modes
         msg = ev.msg
         datapath = msg.datapath
@@ -245,6 +294,9 @@ class SecondSlicing(app_manager.RyuApp):
             self._send_package(msg, datapath, in_port, actions)
 
 class SecondSlicingController(ControllerBase):
+    """
+    Controller API for managing network slicing modes.
+    """
     index_to_mode_name = {
         0: "first_mode",
         1: "second_mode",
@@ -262,6 +314,13 @@ class SecondSlicingController(ControllerBase):
 
     @staticmethod
     def get_cors_headers():
+        """
+        Get CORS headers.
+
+        Args: None
+
+        Returns:dict: A dictionary containing CORS headers.
+        """
         return {
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -270,6 +329,13 @@ class SecondSlicingController(ControllerBase):
         }
 
     def clear_flow_tables(self):
+        """
+        Clear all flow tables of the switches and reapply default flow rules.
+
+        Args: None
+
+        Returns: None
+        """
         # Remove all flows tables
         for dp_i in self.second_slicing.datapaths:
             switch_dp = self.second_slicing.datapaths[dp_i]
@@ -319,12 +385,27 @@ class SecondSlicingController(ControllerBase):
             self.second_slicing.add_flow(datapath, 10, match_icmp, actions)
 
     def get_active_modes(self):
+        """
+        Get the current active mode.
+
+        Args: None
+
+        Returns: None
+        """
         global current_modes
         modes = [self.index_to_mode_name[mode_index] for mode_index in sorted(current_modes)]
         modes = ", ".join(modes)
         return modes
 
     def set_mode(self, mode_name):
+        """
+        Toggle the specified mode in the current modes list.
+
+        Args:
+            mode_name (str): The mode to set (e.g., "first_mode", "second_mode", "third_mode").
+    
+        Returns: None
+        """
         global current_modes
         mode_value = self.mode_name_to_index[mode_name]
         if mode_value in current_modes:
@@ -335,6 +416,16 @@ class SecondSlicingController(ControllerBase):
 
     @route("active_modes", url + "/active_modes", methods=["GET"])
     def fetch_active_modes(self, req, **kwargs):
+        """
+        Return the list of active modes.
+
+        Args:
+            req: The request object.
+            **kwargs: Additional parameters.
+
+        Returns:
+            Response: A response containing the list of active modes as a string.
+        """
         headers = self.get_cors_headers()
         global current_modes
         modes = [str(mode) for mode in current_modes]
@@ -345,18 +436,48 @@ class SecondSlicingController(ControllerBase):
 
     @route("first_mode", url + "/first_mode", methods=["GET"])
     def toggle_first_mode(self, req, **kwargs):
+        """
+        Toggle the first mode.
+
+        Args:
+            req: The request object.
+            **kwargs: Additional parameters.
+
+        Returns:
+            Response: A response containing the updated active modes.
+        """
         headers = self.get_cors_headers()
         self.set_mode("first_mode")
         return Response(status=200, body=self.get_active_modes(), headers=headers)
 
     @route("second_mode", url + "/second_mode", methods=["GET"])
     def toggle_second_mode(self, req, **kwargs):
+        """
+        Toggle the second mode.
+
+        Args:
+            req: The request object.
+            **kwargs: Additional parameters.
+
+        Returns:
+            Response: A response containing the updated active modes.
+        """
         headers = self.get_cors_headers()
         self.set_mode("second_mode")
         return Response(status=200, body=self.get_active_modes(), headers=headers)
 
     @route("third_mode", url + "/third_mode", methods=["GET"])
     def toggle_third_mode(self, req, **kwargs):
+        """
+        Toggle the third mode.
+
+        Args:
+            req: The request object.
+            **kwargs: Additional parameters.
+
+        Returns:
+            Response: A response containing the updated active modes.
+        """
         headers = self.get_cors_headers()
         self.set_mode("third_mode")
         return Response(status=200, body=self.get_active_modes(), headers=headers)
