@@ -21,15 +21,18 @@
 - [Authors](#authors)
 
 ## Project Description
-TODO: add a brief description of the project (mentioning comnetsemu, mininet, ryu, etc.)
 
 This project aims to implement an on-demand slicing solution, with a web interface that interacts with a Ryu controller and a Mininet topology. The application allows the user to enable and disable different slices in the network, as well as to modify the QoS parameters of the network, by allocating different bandwidths to different queues which represent different types of traffic.
 
 The project is divided into two topologies, each with its own controller. The first one allows the user to enable one slice at a time, while the second one allows the user to enable multiple slices at the same time and to modify the QoS parameters of the network.
 
-Key technologies used:
-- ComNetSemu and Mininet for network simulation
-- Ryu as the SDN controller
+### Key technologies used
+
+The key technologies used in the project are:
+- Comnetsemu: a network emulator that comes with all the necessary tools to run the project
+- Mininet: a network emulator that allows the creation of a network topology
+- Ryu: an SDN framework that provides a set of tools such as a controller and a REST API to interact with the network
+- Python for the network anc controller logic
 - HTML, CSS, and JavaScript for the web interface
 
 ## Project Structure
@@ -140,7 +143,7 @@ Connects h3, h4, h9 and h10 to each other
 
 This section contains all the necessary commands to run and test the application. The application can be run either in the GUI or in the terminal.
 
-The application can be run via [ComNetsEmu](https://git.comnets.net/public-repo/comnetsemu), a network emulator that comes with all the necessary tools to run this project, or by instaling all the necessary requirements.
+The application can be run via [ComNetsEmu](https://git.comnets.net/public-repo/comnetsemu), or by instaling all the necessary requirements.
 
 
 ### Running the Application in the GUI
@@ -154,6 +157,11 @@ This section contains all the necessary commands to run and test the application
 3. Running the gui
     - navigate to the `gui/` directory
     - execute `python3 -m http.server 8080`
+
+The GUI can be accessed at `http://localhost:8080/` and looks like this:
+![GUI](docs_images/Gui.png)
+- It is possible select the topology and the slices to enable
+- It is also possible to update the QoS parameters in the second topology
 
 Note: it is important that you run mininet before running the controller, otherwise the controller will not be able to see the queues (in the second topology)
 
@@ -191,18 +199,21 @@ In the second topology there are 4 queues for each link:
 The queues's values can be set from the GUI:
 - In the input box present in the second topology, enter three comma-separated values representing the bandwidth allocated respectively to HTTP, DNS, and ICMP. The remaining bandwidth on the link will be allocated to General traffic
 - Each integer represents a MBps. For example, entering `1,5,3` will allocate 1MBps to HTTP, 5MBps to DNS, 3MBps to ICMP and 1MBps to General traffic
-- Ensure that the total sum of the three allocated values does not exceed 10 as all the links have bandwidth 10MBps (TODO: change this part)
-- TODO: add img
+- Ensure that the total sum of the three allocated values does not exceed 10 as all the links have bandwidth 10MBps
 
 To test HTTP run:
 1. `<SERVER_HOST> iperf -s -p 80 &` to run a server `<SERVER_HOST>` on port 80
 2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -p 80` to run a client `<CLIENT_HOST>` that will connect to `<SERVER_HOST>`
-- an example of the server and client hosts can be `h1` and `h2`
+- an example of the server and client hosts can be `h1` and `h6`
+
+![HTTP test](docs_images/HTTPTest.png)
 
 To test DNS run:
 1. `<SERVER_HOST> iperf -s -u -p 53 &`
 2. `<CLIENT_HOST> iperf -c <SERVER_HOST> -u -b 10m -p 53`
 - Note: it is necessary to specify the bandwidth with `-b` for DNS traffic because it defaults to 1Mbps
+
+![DNS test](docs_images/DNSTest.png)
 
 Since ICMP is primarely used to check the reachability of hosts through the `ping`command, it is not possible to test it directly.
 
@@ -214,11 +225,11 @@ To test General traffic run:
     - `total_bandwidth - (http_bandwidth + dns_bandwidth + icmp_bandwidth)`
     - where `total_bandwidth` is the total bandwidth of the link, which is 10Mbps in this case
 
+![General test](docs_images/GeneralTest.png)
+
 To list all queues run: `sudo ovs-vsctl list queue`
 
 Note: the queues are automatically deleted whenever the new queues are created
-
-TODO: add screenshots of the GUI and the terminal (for each command)
 
 ### Endpoints
 
