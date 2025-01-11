@@ -1,130 +1,6 @@
 const baseURL = "http://localhost:8081/controller/"
-
 const green = "rgb(44, 151, 75)"
 const red = "rgb(172, 17, 17)"
-
-// update buttons color and current mode on load
-document.addEventListener("DOMContentLoaded", function() {
-  getActiveMode("first")
-  getActiveMode("second")
-})
-
-// change the slicing mode
-function alwaysOnMode() { changeMode("first", "alwaysOn") }
-function listenerMode() { changeMode("first", "listener") }
-function noGuestMode() { changeMode("first", "noGuest") }
-function speakerMode() { changeMode("first", "speaker") }
-function firstSlice() { changeMode("second", "first") }
-function secondSlice() { changeMode("second", "second") }
-function thirdSlice() { changeMode("second", "third") }
-
-// change the QoS
-function updateQoS() {
-  let values = document.getElementById("qosValues").value
-  values = values.split(",").map(value => parseInt(value))
-  let total = values.reduce((a, b) => a + b, 0)
-  if(total > 9) {
-    document.getElementById("connectionStatus").textContent = "The sum of the values must be at most 9"
-    document.getElementById("connectionStatus").style.color = "red"
-    return
-  } else if(values.length !== 3) {
-    document.getElementById("connectionStatus").textContent = "The number of values must be 3"
-    document.getElementById("connectionStatus").style.color = "red"
-    return
-  } else if(values.some(value => value < 1)) {
-    document.getElementById("connectionStatus").textContent = "Each value must be greater than or equal to 1"
-    document.getElementById("connectionStatus").style.color = "red"
-    return
-  }
-  fetch(baseURL + "second/qos", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      values: values
-    })
-  })
-  .then(response => {
-    if (!response.ok) {
-      document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"
-      document.getElementById("connectionStatus").style.color = "red"
-      throw new Error('ERROR ' + response.statusText)
-    }
-    return response.text()
-  })
-  .then(data => {
-    document.getElementById("connectionStatus").textContent = "Values updated correctly"
-    document.getElementById("connectionStatus").style.color = "green"
-  })
-  .catch(error => {
-    document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"
-    document.getElementById("connectionStatus").style.color = "red"
-    throw new Error('ERROR ' + error)
-  })
-}
-
-// Utils
-function changeMode(topology, mode) {
-  const modeConfig = modeConfigurations[topology][mode]
-  updateSliceMode(topology, modeConfig.url, modeConfig.caption, modeConfig.activeBtn, ...modeConfig.inactiveBtns)
-}
-
-function getActiveMode(topology) {
-  fetch(baseURL + topology + "/active_modes")
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('ERROR ' + response.statusText)
-    }
-    return response.text()
-  })
-  .then(data => {
-    if(!data) {
-      return
-    }
-    let buttons = data.split(",").map(value => parseInt(value)).sort()
-    let textContentId = topology === "first" ? "firstTopology": "secondTopology"
-    if(isNaN(buttons[0])) {
-      document.getElementById(textContentId).textContent = "Current: Default Mode"
-    } else {
-      document.getElementById(textContentId).textContent = "Current: " + buttons.map(index => btnIndexToCaption[topology][index]).join(", ")
-      toggleButtonColor(topology,buttons.map(index => btnIndexToBtnId[topology][index]))
-    }
-  })
-  .catch(error => {
-    console.error('ERROR 2:', error)
-  })
-}
-
-function updateSliceMode(topology, url, caption, activeBtn, ...inactiveBtns) {
-  fetch(baseURL + url)
-    .then(response => {
-      if (!response.ok) {
-        document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
-        document.getElementById("connectionStatus").style.color = "red"
-        throw new Error('ERROR ' + response.statusText)
-      }
-      return response.text()
-    })
-    .then(data => {
-      document.getElementById("connectionStatus").textContent = "Slicing mode update was successful"
-      document.getElementById("connectionStatus").style.color = "green"
-      if(topology === "first") {
-        document.getElementById("firstTopology").textContent = "Current: " + caption
-      } else {
-        data = data.split(",").map(value => modeCaptions[value.trim()]).join(", ")
-        if(!data)
-          data = "Default mode"
-        document.getElementById("secondTopology").textContent = "Current: " + data
-      }
-      toggleButtonColor(topology, activeBtn, ...inactiveBtns)
-    })
-    .catch(error => {
-      document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
-      document.getElementById("connectionStatus").style.color = "red"
-      console.error('ERROR 2:', error)
-    })
-}
 
 const modeConfigurations = {
   first: {
@@ -174,6 +50,160 @@ const modeCaptions = {
   "third_mode": "Third Mode"
 }
 
+// Update buttons color and current mode on load
+document.addEventListener("DOMContentLoaded", function() {
+  getActiveMode("first")
+  getActiveMode("second")
+})
+
+// Change the slicing mode
+function alwaysOnMode() { changeMode("first", "alwaysOn") }
+function listenerMode() { changeMode("first", "listener") }
+function noGuestMode() { changeMode("first", "noGuest") }
+function speakerMode() { changeMode("first", "speaker") }
+function firstSlice() { changeMode("second", "first") }
+function secondSlice() { changeMode("second", "second") }
+function thirdSlice() { changeMode("second", "third") }
+
+/**
+ * Change the slicing mode of the topology
+ * @param {string} topology - The current topology
+ * @param {string} mode - The new mode
+ */
+function changeMode(topology, mode) {
+  const modeConfig = modeConfigurations[topology][mode]
+  updateSliceMode(topology, modeConfig.url, modeConfig.caption, modeConfig.activeBtn, ...modeConfig.inactiveBtns)
+}
+
+/**
+ * Update the slicing mode of the topology
+ * @param {string} topology - Current topology
+ * @param {string} url - URL to send the request
+ * @param {string} caption - Text to display after the update
+ * @param {string} activeBtn - Button that will show as active after the update
+ * @param  {Array} inactiveBtns - Buttons that will show as inactive after the update
+ */
+function updateSliceMode(topology, url, caption, activeBtn, ...inactiveBtns) {
+  fetch(baseURL + url)
+    .then(response => {
+      if (!response.ok) {
+        document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
+        document.getElementById("connectionStatus").style.color = "red"
+        throw new Error('ERROR ' + response.statusText)
+      }
+      return response.text()
+    })
+    .then(data => {
+      document.getElementById("connectionStatus").textContent = "Slicing mode update was successful"
+      document.getElementById("connectionStatus").style.color = "green"
+      if(topology === "first") {
+        document.getElementById("firstTopology").textContent = "Current: " + caption
+      } else {
+        data = data.split(",").map(value => modeCaptions[value.trim()]).join(", ")
+        if(!data)
+          data = "Default mode"
+        document.getElementById("secondTopology").textContent = "Current: " + data
+      }
+      toggleButtonColor(topology, activeBtn, ...inactiveBtns)
+    })
+    .catch(error => {
+      document.getElementById("connectionStatus").textContent = "An error occurred during the update of slicing mode"
+      document.getElementById("connectionStatus").style.color = "red"
+      console.error('ERROR 2:', error)
+    })
+}
+
+/**
+ * Send the new QoS values to the controller
+ *
+ * The values must be separated by commas
+ * The sum of the values must be at most 9
+ * The number of values must be 3
+ * Each value must be greater than or equal to 1
+ */
+function updateQoS() {
+  let values = document.getElementById("qosValues").value
+  values = values.split(",").map(value => parseInt(value))
+  let total = values.reduce((a, b) => a + b, 0)
+  if(total > 9) {
+    document.getElementById("connectionStatus").textContent = "The sum of the values must be at most 9"
+    document.getElementById("connectionStatus").style.color = "red"
+    return
+  } else if(values.length !== 3) {
+    document.getElementById("connectionStatus").textContent = "The number of values must be 3"
+    document.getElementById("connectionStatus").style.color = "red"
+    return
+  } else if(values.some(value => value < 1)) {
+    document.getElementById("connectionStatus").textContent = "Each value must be greater than or equal to 1"
+    document.getElementById("connectionStatus").style.color = "red"
+    return
+  }
+  fetch(baseURL + "second/qos", {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      values: values
+    })
+  })
+  .then(response => {
+    if (!response.ok) {
+      document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"
+      document.getElementById("connectionStatus").style.color = "red"
+      throw new Error('ERROR ' + response.statusText)
+    }
+    return response.text()
+  })
+  .then(data => {
+    document.getElementById("connectionStatus").textContent = "Values updated correctly"
+    document.getElementById("connectionStatus").style.color = "green"
+  })
+  .catch(error => {
+    document.getElementById("connectionStatus").textContent = "An error occurred during the update of the values"
+    document.getElementById("connectionStatus").style.color = "red"
+    throw new Error('ERROR ' + error)
+  })
+}
+
+// Utility functions
+/**
+ * Check the active modes of the topology and update the buttons and text content
+ * @param {string} topology - The topology to check the active modes for
+ */
+function getActiveMode(topology) {
+  fetch(baseURL + topology + "/active_modes")
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('ERROR ' + response.statusText)
+    }
+    return response.text()
+  })
+  .then(data => {
+    if(!data) {
+      return
+    }
+    let buttons = data.split(",").map(value => parseInt(value)).sort()
+    let textContentId = topology === "first" ? "firstTopology": "secondTopology"
+    if(isNaN(buttons[0])) {
+      document.getElementById(textContentId).textContent = "Current: Default Mode"
+    } else {
+      document.getElementById(textContentId).textContent = "Current: " + buttons.map(index => btnIndexToCaption[topology][index]).join(", ")
+      toggleButtonColor(topology,buttons.map(index => btnIndexToBtnId[topology][index]))
+    }
+  })
+  .catch(error => {
+    console.error('ERROR 2:', error)
+  })
+}
+
+/**
+ * Change the color of the buttons
+ * @param {string} topology - Current topology
+ * @param {Array} activeBtns - Buttons that will show as active
+ * @param  {Array} inactiveBtns - Buttons that will show as inactive
+ * @returns
+ */
 function toggleButtonColor(topology, activeBtns, ...inactiveBtns) {
   if(!activeBtns) {
     return
@@ -197,6 +227,11 @@ function toggleButtonColor(topology, activeBtns, ...inactiveBtns) {
   }
 }
 
+/**
+ * Get the color of the button
+ * @param {string} activeBtn - The id of the button to get the color of
+ * @return {string} The color of the button
+ */
 function getButtonColor(activeBtn) {
   let btn = document.getElementById(activeBtn)
   var style = getComputedStyle(btn)

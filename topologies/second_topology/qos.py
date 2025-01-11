@@ -8,6 +8,13 @@ stderr_path = os.path.join(qos_path, "stderr.txt")
 create_queue_script = "./createQueue.sh"
 
 class QoS:
+    """
+    Singleton class to manage the QoS process
+
+    Attributes:
+        _instance: instance of the class
+        _running: process id of the running QoS process
+    """
     _instance = None
     _running = None
 
@@ -17,6 +24,14 @@ class QoS:
         return cls._instance
 
     def start_process(self, *args):
+        """
+        Start the QoS process by creating new queues
+
+        This method performs the following steps:
+        1. Create a new directory if it doesn't exist
+        2. Save the current queues in a file to remove them after the new ones are created
+        3. Run the QoS process
+        """
         os.makedirs(qos_path, exist_ok=True)
         if os.path.isfile(current_queues_path):
             with open(current_queues_path, "r") as input_file, open(old_queues_path, "w") as output_file:

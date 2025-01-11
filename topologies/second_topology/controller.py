@@ -484,6 +484,16 @@ class SecondSlicingController(ControllerBase):
 
     @route("qos", url + "/qos", methods=["POST", "OPTIONS"])
     def set_qos(self, req, **kwargs):
+        """
+        Set the QoS values for the network slicing.
+
+        Args:
+            req: The request object.
+            **kwargs: Additional parameters.
+
+        Returns:
+            Response: A response containing the status of the request.
+        """
         headers = self.get_cors_headers()
 
         if req.method == "OPTIONS":
