@@ -115,12 +115,32 @@ class SecondSlicing(app_manager.RyuApp):
             self.request_queue_config(datapath, port_no)
 
     def request_queue_config(self, datapath, port_no):
+        """
+        Send request messagge for queue configuration on a given port number.
+
+        Args:
+            datapath (datapath): the datapath of the switch
+            port_no (int): the number of the port to know the configuration
+
+        Returns:
+            none
+        """
         parser = datapath.ofproto_parser
         req = parser.OFPQueueGetConfigRequest(datapath, port=port_no)
-        datapath.send_msg(req) # Send the request message for queue config, that runs the function under this
+        datapath.send_msg(req) 
 
     @set_ev_cls(ofp_event.EventOFPQueueGetConfigReply, MAIN_DISPATCHER)
     def handle_queue_config_reply(self, ev):
+        """
+        Handles the event of request of queue configuration, sent by request_queue_config. 
+        Put the result in a dictionary used to check, during packets forwarding, if a queue is associated to the candidate port. 
+
+        Args:
+            ev (EventOFPSwitchFeatures): The event representing the switch features.
+
+        Returns:
+            none   
+        """
         msg = ev.msg
         dpid = msg.datapath.id
         port_no = msg.port

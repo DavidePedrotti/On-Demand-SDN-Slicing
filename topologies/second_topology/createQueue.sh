@@ -5,8 +5,6 @@ QUEUE_2=$2
 QUEUE_3=$3
 QUEUE_4=$(expr 10000000 - $QUEUE_1 - $QUEUE_2 - $QUEUE_3)
 
-# TODO: Create 3 virtual queues for every link in the network (3*4=12), with max-rate for each services passed as variable
-
 
 
 # Switch 3 - eth3
@@ -115,6 +113,8 @@ queues:456=@4q -- \
 --id=@4q create queue other-config:min-rate=1 other-config:max-rate=$QUEUE_4 
 
 mkdir -p qos_data
+
+# Destroy old queues and QoS
 
 if [ -f "qos_data/old_queues.txt" ]; then
     while read -r uuid
